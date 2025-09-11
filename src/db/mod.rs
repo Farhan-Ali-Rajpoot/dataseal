@@ -9,7 +9,9 @@ pub mod structs;
 pub mod config;
 pub mod data_encryption;
 pub mod enc_keys;
+pub mod auth;
 // Struct modules
+use crate::db::enc_keys::{derive_key};
 pub use structs::{FileEntry, PasswordEntry, DatabaseMeta, Database};
 pub use config::Config;
 // Standard Modules
@@ -46,11 +48,11 @@ impl Database {
         let config = match Config::load_or_create(&config_file, master_password) {
             Ok(cfg) => cfg,
             Err(e) => {
-                println!("⚠️ Failed to load or create config: {}", e);
+                println!("{}", e);
                 return None
             }
         };
-        let master_key = Self::derive_key_static(&config.kdf_salt_b64, master_password);
+        let master_key = derive_key(&config.kdf_salt_b64, master_password);
 
         // Create directories
         for dir in [

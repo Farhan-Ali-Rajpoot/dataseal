@@ -1,6 +1,7 @@
 use super::{Database,PasswordEntry};
 
 use crate::db::time;
+use crate::db::enc_keys::{unwrap_item_key, wrap_item_key, generate_item_key};
 
 
 
@@ -21,8 +22,8 @@ impl Database {
             }
         }
 
-        let item_key = self.generate_item_key();
-        let encrypted_item_key = match self.wrap_item_key(&item_key) {
+        let item_key = generate_item_key();
+        let encrypted_item_key = match wrap_item_key(&item_key, &self.master_key) {
             Some(eik) => eik,
             None => {
                 println!("❌ Failed to generate encrypted item key for password: {}", name);
@@ -75,7 +76,7 @@ impl Database {
             }
 
             // Encrypt the password
-            let key = match self.unwrap_item_key(&entry.encrypted_item_key) {
+            let key = match unwrap_item_key(&entry.encrypted_item_key, &self.master_key) {
                 Some(k) => k,
                 None => {
                     println!("❌ Wrong password or corrupted String: {}", name);
@@ -126,7 +127,7 @@ impl Database {
             }
 
             // Decrypt the password
-            let key = match self.unwrap_item_key(&entry.encrypted_item_key) {
+            let key = match unwrap_item_key(&entry.encrypted_item_key, &self.master_key) {
                 Some(k) => k,
                 None => {
                     println!("❌ Wrong password or corrupted String: {}", name);

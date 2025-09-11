@@ -19,6 +19,7 @@ pub struct Config {
     pub kdf_salt_b64: String,
     pub verifier_b64: String,
     pub max_file_size_mb: u64,
+    pub path: Option<String>,
 }
 
 impl Config {
@@ -36,6 +37,7 @@ impl Config {
             kdf_salt_b64: Self::generate_salt(),
             verifier_b64: "".to_string(),
             max_file_size_mb: 100,
+            path: None,
         }
     }
 
@@ -56,7 +58,7 @@ impl Config {
     }
 
     /// Encrypt the verifier string ("verify") with master password
-    pub fn encrypt_verifier(&self, master_password: &str) -> String {
+    pub fn encrypt_verifier(&self, master_password: &str) -> (String, [u8; 32]) {
         let key = self.derive_master_key(master_password);
         let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
         let nonce = Self::generate_nonce();
@@ -66,7 +68,7 @@ impl Config {
 
         let mut result = nonce.to_vec();
         result.extend(ciphertext);
-        general_purpose::STANDARD.encode(&result)
+        (general_purpose::STANDARD.encode(&result), key)
     }
 
     /// Check if provided password can decrypt verifier
@@ -86,6 +88,27 @@ impl Config {
         }
     }
 
+    // Change password
+    pub fn change_master_password(&mut self, old_password: &str, new_password: &str) -> Option<[u8; 32]> {
+        // Step 1: Check old password
+        if !self.check_verifier(old_password) {
+            return None;
+        }
+
+        // Step 2: Generate new verifier with new password
+        let (new_verifier, master_key) = self.encrypt_verifier(new_password);
+        self.verifier_b64 = new_verifier;
+
+
+        if let Some(path) = &self.path {
+            let _ = fs::write(path, serde_json::to_string_pretty(&self).unwrap())
+                .map_err(|e| format!("Failed to write updated config: {e}"));
+            Some(master_key)
+        } else {
+            None
+        }
+    }
+
     /// Load existing config or create new one; verify master password
     pub fn load_or_create(path: &str, master_password: &str) -> Result<Self, String> {
         if !Path::new(path).exists() {
@@ -94,7 +117,9 @@ impl Config {
                 fs::create_dir_all(parent).map_err(|e| format!("Failed to create parent directory: {e}"))?;
             }
             let mut cfg = Self::default();
-            cfg.verifier_b64 = cfg.encrypt_verifier(master_password);
+            let (verifier_b64, _) = cfg.encrypt_verifier(master_password);
+            cfg.verifier_b64 = verifier_b64;
+            cfg.path = Some(path.to_string());
             fs::write(path, serde_json::to_string_pretty(&cfg).unwrap())
                 .map_err(|e| format!("Failed to write config: {e}"))?;
             Ok(cfg)
@@ -107,7 +132,7 @@ impl Config {
             if cfg.check_verifier(master_password) {
                 Ok(cfg)
             } else {
-                Err("❌ Wrong master password!".to_string())
+                Err("❌ Wrong master password! Exiting...".to_string())
             }
         }
     }

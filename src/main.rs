@@ -1,39 +1,34 @@
-mod db;
+use clap::Parser;
 
-use db::Database;
+pub mod db;
+pub mod cli;
+pub mod gui;
 
-
-
-
-
-fn main () {
-    if let Some(mut db) = Database::new("farhanali") {
-        // db.restore_password("Google");
-        // db.restore_file("Hulllp");
-        // db.empty_recycle_bin();
-        // db.delete_file("gian_another");
-        // db.delete_all_files();
-        // db.delete_all_passwords();
-        
-        // db.decrypt_file("gian");
-        // db.encrypt_file("gian");
-        // db.add_file("gian", "../../Downloads/gian.pdf",);
-
-        // db.delete_password("Google");
-        // db.encrypt_password("Google");
-        // db.decrypt_password("Google");
-        // db.change_password("Google", "1234567890");
-        // db.add_password("Google", "mypassword123");
-
-
-        // let files = db.list_passwords(Some("recycled"));
-
-        // println!("{:#?}",files);
-    }else {
-
-    }
+#[derive(Parser)]
+struct Args {
+    /// Launch CLI instead of default GUI
+    #[arg(short,long)]
+    cli: bool,
+    #[arg(short, long)]
+    password: Option<String>,
 }
 
+fn main() {
+    let args = Args::parse();
 
+    if args.cli {
+        let master_password = match args.password {
+            Some(p) => p,
+            None => {
+                eprintln!("❌ Please provide a master password with --master or -m");
+                return;
+            }
+        };
 
-// ✅ ❌ ⚠️ ℹ️ ♻️ 🔄 🛑 🚫 🔍 🗑️ ✨ 🎉 💡 🔧 🔴 🟡 🟢
+        println!("🚀 Launching DataSeal CLI...");
+        cli::repl::start(&master_password);
+        return;
+    }
+
+    println!("🎨 GUI version is not implemented yet. Exiting...");
+}

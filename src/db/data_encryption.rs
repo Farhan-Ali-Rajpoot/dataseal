@@ -5,6 +5,8 @@ use aes_gcm::{Aes256Gcm, Key, Nonce};
 use aes_gcm::aead::{Aead, KeyInit};
 use base64::{engine::general_purpose, Engine as _};
 
+use crate::db::enc_keys::{generate_nonce};
+
 impl Database {
     
 
@@ -12,7 +14,7 @@ impl Database {
     pub fn encrypt_string(&self, plaintext: &str, key: &[u8]) -> Option<String> {
         let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
 
-        let nonce_bytes = Self::generate_nonce();
+        let nonce_bytes = generate_nonce();
         let ciphertext = match cipher.encrypt(Nonce::from_slice(&nonce_bytes), plaintext.as_ref()) {
             Ok(c) => c,
             Err(_) => return None, // encryption failed
@@ -45,7 +47,7 @@ impl Database {
             }
         };
 
-        let nonce_bytes = Self::generate_nonce();
+        let nonce_bytes = generate_nonce();
         let ciphertext = match cipher.encrypt(Nonce::from_slice(&nonce_bytes), plaintext.as_ref()) {
             Ok(c) => c,
             Err(e) => {
