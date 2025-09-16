@@ -17,7 +17,7 @@ pub struct FileEntry {
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PasswordEntry {
     pub name: String,
     pub password: String, // plain text for now
@@ -28,7 +28,7 @@ pub struct PasswordEntry {
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct DatabaseMeta {
     pub passwords: Vec<PasswordEntry>,
     pub files: Vec<FileEntry>,

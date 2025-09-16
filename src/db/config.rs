@@ -6,8 +6,8 @@ use std::path::Path;
 use rand::rngs::ThreadRng;
 use rand::RngCore;
 
-use aes_gcm::{Aes256Gcm, Key, Nonce};
-use aes_gcm::aead::{Aead, KeyInit};
+use aes_gcm_siv::{Aes256GcmSiv, Key, Nonce}; // AEAD
+use aes_gcm_siv::aead::{Aead, KeyInit};
 
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
@@ -60,7 +60,7 @@ impl Config {
     /// Encrypt the verifier string ("verify") with master password
     pub fn encrypt_verifier(&self, master_password: &str) -> (String, [u8; 32]) {
         let key = self.derive_master_key(master_password);
-        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+        let cipher = Aes256GcmSiv::new(Key::<Aes256GcmSiv>::from_slice(&key));
         let nonce = Self::generate_nonce();
 
         let ciphertext = cipher.encrypt(Nonce::from_slice(&nonce), b"verify" as &[u8])
@@ -81,7 +81,7 @@ impl Config {
         if data.len() < 12 { return false; }
 
         let (nonce_bytes, ciphertext) = data.split_at(12);
-        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+        let cipher = Aes256GcmSiv::new(Key::<Aes256GcmSiv>::from_slice(&key));
         match cipher.decrypt(Nonce::from_slice(nonce_bytes), ciphertext) {
             Ok(pt) => pt == b"verify",
             Err(_) => false,
@@ -122,6 +122,7 @@ impl Config {
             cfg.path = Some(path.to_string());
             fs::write(path, serde_json::to_string_pretty(&cfg).unwrap())
                 .map_err(|e| format!("Failed to write config: {e}"))?;
+            println!("Singned up!");
             Ok(cfg)
         } else {
             // Load existing config

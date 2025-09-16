@@ -45,7 +45,7 @@ impl Database {
         true
     }
 
-    pub fn change_password (&mut self,name: &str, new_password: &str) -> bool {
+    pub fn change_password(&mut self,name: &str, new_password: &str) -> bool {
         if let Some(entry) = self.meta.passwords.iter_mut().find(|e| e.name == name) {
             if entry.password == new_password {
                 println!("❌ New password is the same as the old password for: {}", name);
@@ -58,7 +58,7 @@ impl Database {
             println!("🔄 Password updated for: {}", name);
             true
         } else {
-            println!("Password '{}' not found. If it’s encrypted, decrypt it first before modifying.", name);
+            println!("❌ Password '{}' not found. If it’s encrypted, decrypt it first before modifying.", name);
             false // password not found
         }
     }

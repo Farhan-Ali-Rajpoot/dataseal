@@ -11,6 +11,8 @@ struct Args {
     cli: bool,
     #[arg(short, long)]
     password: Option<String>,
+    // #[arg(short,long)]
+    // help: bool
 }
 
 fn main() {
@@ -28,7 +30,10 @@ fn main() {
         println!("🚀 Launching DataSeal CLI...");
         cli::repl::start(&master_password);
         return;
-    }
+    }// else if args.help {
+     //   println!("{}",cli::help_document::help_document());
+     //   return;
+    //}
 
     println!("🎨 GUI version is not implemented yet. Exiting...");
 }

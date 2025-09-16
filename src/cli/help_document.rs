@@ -30,21 +30,22 @@ pub fn help_document() -> String {
           └───────────────────────┘
             pwd               Print current working directory
             ls                List files and folders in current directory
-            cd <dir>           Change current directory
+            cd <dir>          Change current directory
 
           ┌───────────────────────┐
           │  FILE COMMANDS        │
           └───────────────────────┘
-            add_file <name>     Encrypt and store a file in the database
-            list_files           Show all stored files
-            extract_file <name>  Decrypt and restore a stored file
+            add_file <name> <filename>      Store file in database, move to that directory where it exists, use cd <path> command. <name> is the name by which file 
+                                            will be stored in database ( don't forget it ). <filenmae> is the name by which it exists in directory or disk.
+            list_files                      Show all stored files
+            encrypt_file <name>             Decrypt encrypted file stored on database. <name> is the name by which file was stored on database.
 
           ┌────────────────────────────┐
           │  PASSWORD VAULT COMMANDS   │
           └────────────────────────────┘
-            add_pass <label>     Store a new password entry
-            list_pass            Show all saved password entries
-            remove_pass <label>  Delete a stored password entry
+            add_pass <name> <password>      Store a new password or string entry
+            list_pass                       Show all saved password or strings entries
+            remove_pass <name>              Delete a stored password or special string entry
 
         NOTES:
             Use commands exactly as shown.
