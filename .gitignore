@@ -1,17 +1,11 @@
-# ---------------------------
-# Rust build artifacts
-# ---------------------------
+# Ignore Rust build artifacts
 /target
 **/*.rs.bk
 
-# ---------------------------
-# Local database / runtime data
-# ---------------------------
+# Ignore local database and runtime data
 /src/_database
 
-# ---------------------------
-# Editor / OS clutter
-# ---------------------------
+# Ignore OS/editor junk
 *.swp
 *.swo
 *.log
@@ -20,19 +14,7 @@ Thumbs.db
 .idea/
 .vscode/
 
-# ---------------------------
-# Optional: explicitly ignore these internal build dirs
-# (covered by /target, but listed for clarity)
-# ---------------------------
-/target/release/deps
-/target/release/build
-/target/release/.fingerprint
-/target/release/examples
-/target/release/incremental
-/target/debug
-
-# ---------------------------
-# If you want to commit ONLY the final built binary manually,
-# you can unignore just that single file like this:
-# ---------------------------
-# !/target/release/dataseal
+# Ignore everything in dist except the built binaries
+/dist/*
+!dist/*.exe
+!dist/dataseal-*
