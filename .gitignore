@@ -1,6 +1,7 @@
-/target/incremental
-/target/deps
-/target/build
-/target/.fingerprint
+/target/release/examples
+/target/release/incremental
+/target/release/deps
+/target/release/build
+/target/release/.fingerprint
 /target/debug
 /src/_database
