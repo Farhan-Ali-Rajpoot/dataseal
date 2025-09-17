@@ -1,5 +1,6 @@
 # Ignore Rust build artifacts
-/target/debug
+/target/*
+!/target/release
 /target/release/.fingerprint
 /target/release/build
 /target/release/deps
@@ -7,7 +8,7 @@
 /target/release/incremental
 /target/release/.cargo-lock
 /target/release/dataseal
-/target/release/database.d
+/target/release/dataseal.d
 
 **/*.rs.bk
 
