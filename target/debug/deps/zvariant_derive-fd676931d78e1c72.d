@@ -1,0 +1,10 @@
+/home/farhanali/Documents/rust-first-project/target/debug/deps/zvariant_derive-fd676931d78e1c72.d: /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/lib.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/dict.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/type.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/utils.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/value.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/../README.md
+
+/home/farhanali/Documents/rust-first-project/target/debug/deps/libzvariant_derive-fd676931d78e1c72.so: /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/lib.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/dict.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/type.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/utils.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/value.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/../README.md
+
+/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/lib.rs:
+/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/dict.rs:
+/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/type.rs:
+/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/utils.rs:
+/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/value.rs:
+/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-5.7.0/src/../README.md:
