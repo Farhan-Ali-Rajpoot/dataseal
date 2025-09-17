@@ -16,7 +16,7 @@ Thumbs.db
 
 # Ignore everything in dist except the built binaries
 /dist/*
-# !dist/*.exe
-# !dist/dataseal-*
+!dist/*.exe
+!dist/dataseal-*
 
 
