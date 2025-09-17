@@ -1,7 +1,14 @@
 # Ignore Rust build artifacts
-/target/*
-!/target/*.exe
-!/target/dataseal-*
+/target/debug
+/target/release/fingerprint
+/target/release/build
+/target/release/deps
+/target/release/examples
+/target/release/incremental
+/target/release/.cargo-lock
+/target/release/dataseal
+/target/release/database.d
+
 **/*.rs.bk
 
 # Ignore local database and runtime data
