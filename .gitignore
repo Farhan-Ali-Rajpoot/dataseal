@@ -1,0 +1,22 @@
+# Ignore Rust build artifacts
+/target
+**/*.rs.bk
+
+# Ignore local database and runtime data
+/src/_database
+
+# Ignore OS/editor junk
+*.swp
+*.swo
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Ignore everything in dist except the built binaries
+/dist/*
+# !dist/*.exe
+# !dist/dataseal-*
+
+
