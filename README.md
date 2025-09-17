@@ -6,6 +6,13 @@ Built with Rust, it combines strong cryptography with a minimal database engine,
 Dataseal uses AES-256-GCM encryption with PBKDF2-HMAC-SHA256 key derivation, and introduces a unique design where your master password protects only the encryption keys, not the files directly. This makes it possible to change your password instantly without re-encrypting all data.
 
 
+Installation: 
+
+    curl -L https://github.com/<your-username>/dataseal/releases/latest/download/dataseal-linux-x86_64.tar.gz -o dataseal.tar.gz
+    tar -xzf dataseal.tar.gz
+    sudo mv dataseal /usr/local/bin/
+
+
 ⚠️ Rights & Usage
 
 No individual, organization, or third party has the right to reproduce, distribute, or commercialize this software or its source code.
@@ -24,3 +31,6 @@ Contact:
 
 Gmail: midlelnight@gmail.com
 website: https://agencytendor.vercel.app
+
+
+
