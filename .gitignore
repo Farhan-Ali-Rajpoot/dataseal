@@ -1,22 +1,12 @@
-# Ignore Rust build artifacts
-/target/debug
-/target/.rustc_info.json
-/target/CACHEDIR.TAG
-/target/release/.fingerprint
-/target/release/build
-/target/release/deps
-/target/release/examples
-/target/release/incremental
-/target/release/.cargo-lock
-/target/release/dataseal
-/target/release/dataseal.d
+# --- Rust build artifacts ---
+/target/
 
 **/*.rs.bk
 
-# Ignore local database and runtime data
+# --- Local database and runtime data ---
 /src/_database
 
-# Ignore OS/editor junk
+# --- OS / editor junk ---
 *.swp
 *.swo
 *.log
@@ -25,9 +15,10 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Ignore everything in dist except the built binaries
+# --- Built distributions ---
+# Ignore everything in dist except the packaged build files you want
 /dist/*
 !dist/*.exe
+!dist/*.zip
+!dist/*.tar.gz
 !dist/dataseal-*
-
-
