@@ -1,9 +1,0 @@
-/home/farhanali/Documents/rust-first-project/target/debug/deps/qmetaobject_impl-8c5286fe69a565ff.d: /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/lib.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qbjs.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qobject_impl.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qrc_impl.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/simplelistitem_impl.rs
-
-/home/farhanali/Documents/rust-first-project/target/debug/deps/libqmetaobject_impl-8c5286fe69a565ff.so: /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/lib.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qbjs.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qobject_impl.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qrc_impl.rs /home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/simplelistitem_impl.rs
-
-/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/lib.rs:
-/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qbjs.rs:
-/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qobject_impl.rs:
-/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/qrc_impl.rs:
-/home/farhanali/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/qmetaobject_impl-0.2.10/src/simplelistitem_impl.rs:
