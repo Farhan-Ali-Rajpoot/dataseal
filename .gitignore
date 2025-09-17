@@ -1,5 +1,7 @@
 # Ignore Rust build artifacts
-/target
+/target/*
+!/target/*.exe
+!/target/dataseal-*
 **/*.rs.bk
 
 # Ignore local database and runtime data
