@@ -1,9 +1,38 @@
-/target/release/dataseal.d
-/target/release/dataseal
-/target/release/examples
-/target/release/incremental
+# ---------------------------
+# Rust build artifacts
+# ---------------------------
+/target
+**/*.rs.bk
+
+# ---------------------------
+# Local database / runtime data
+# ---------------------------
+/src/_database
+
+# ---------------------------
+# Editor / OS clutter
+# ---------------------------
+*.swp
+*.swo
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ---------------------------
+# Optional: explicitly ignore these internal build dirs
+# (covered by /target, but listed for clarity)
+# ---------------------------
 /target/release/deps
 /target/release/build
 /target/release/.fingerprint
+/target/release/examples
+/target/release/incremental
 /target/debug
-/src/_database
+
+# ---------------------------
+# If you want to commit ONLY the final built binary manually,
+# you can unignore just that single file like this:
+# ---------------------------
+# !/target/release/dataseal
