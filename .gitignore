@@ -1,6 +1,7 @@
 # Ignore Rust build artifacts
-/target/*
-!/target/release
+/target/debug
+/target/.rustc_info.json
+/target/CACHEDIR.TAG
 /target/release/.fingerprint
 /target/release/build
 /target/release/deps
