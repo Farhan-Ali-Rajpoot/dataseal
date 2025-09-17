@@ -1,3 +1,5 @@
+/target/release/dataseal.d
+/target/release/dataseal
 /target/release/examples
 /target/release/incremental
 /target/release/deps
