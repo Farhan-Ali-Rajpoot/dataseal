@@ -1,1 +1,6 @@
+/target/incremental
+/target/deps
+/target/build
+/target/.fingerprint
+/target/debug
 /src/_database
