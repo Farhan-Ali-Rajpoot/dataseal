@@ -1,7 +1,9 @@
 [package]
-name = "rust-first-project"
+name = "dataseal"
 version = "0.1.0"
+description = "A mini CLI database with optional GUI"
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 aes = "0.8.4"

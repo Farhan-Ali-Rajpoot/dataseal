@@ -5,35 +5,35 @@ pub mod cli;
 pub mod gui;
 
 #[derive(Parser)]
+#[command(name = "DataSeal")]
+#[command(about = "A simple database app with CLI and GUI modes", long_about = None)]
 struct Args {
-    /// Launch CLI instead of default GUI
-    #[arg(short,long)]
-    cli: bool,
+    /// Launch GUI version (default is CLI)
+    #[arg(long)]
+    gui: bool,
+
+    /// Master password for CLI mode
     #[arg(short, long)]
     password: Option<String>,
-    // #[arg(short,long)]
-    // help: bool
 }
 
 fn main() {
     let args = Args::parse();
 
-    if args.cli {
-        let master_password = match args.password {
-            Some(p) => p,
-            None => {
-                eprintln!("❌ Please provide a master password with --master or -m");
-                return;
-            }
-        };
-
-        println!("🚀 Launching DataSeal CLI...");
-        cli::repl::start(&master_password);
+    if args.gui {
+        println!("🎨 Launching DataSeal GUI...");
+        gui::main::start(); // your GUI entrypoint (not yet implemented)
         return;
-    }// else if args.help {
-     //   println!("{}",cli::help_document::help_document());
-     //   return;
-    //}
+    }
 
-    println!("🎨 GUI version is not implemented yet. Exiting...");
+    let master_password = match args.password {
+        Some(p) => p,
+        None => {
+            eprintln!("❌ Please provide a master password with --password or -p");
+            return;
+        }
+    };
+
+    println!("🚀 Launching DataSeal CLI...");
+    cli::repl::start(&master_password);
 }

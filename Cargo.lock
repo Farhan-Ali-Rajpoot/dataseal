@@ -306,6 +306,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "dataseal"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "aes-gcm-siv",
+ "argon2",
+ "base64",
+ "chacha20poly1305",
+ "chrono",
+ "clap",
+ "colored",
+ "pathdiff",
+ "pbkdf2",
+ "rand",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -589,26 +609,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 dependencies = [
  "getrandom 0.3.3",
-]
-
-[[package]]
-name = "rust-first-project"
-version = "0.1.0"
-dependencies = [
- "aes",
- "aes-gcm-siv",
- "argon2",
- "base64",
- "chacha20poly1305",
- "chrono",
- "clap",
- "colored",
- "pathdiff",
- "pbkdf2",
- "rand",
- "serde",
- "serde_json",
- "sha2",
 ]
 
 [[package]]
