@@ -14,7 +14,7 @@ pub fn start(master_password: &str) {
     // Clear Screen
     fs_commands::clear();
 
-    let mut db: Database = match Database::new(master_password) {
+    let mut db: Database = match Database::with_dir(".cache/local",master_password) {
         Some(d) => d,
         None => {
             println!("Failed to initialize database. Exiting...");
@@ -63,7 +63,7 @@ pub fn start(master_password: &str) {
                             println!("✅ Master password changed.");
                         }
                     }
-                }
+                },
                 // Recycle Bin
                 "empty-recycle-bin" | "emp-rec-bin" | "erb" => {
                     if validate_args(&["empty-recycle-bin","emp-rec-bin","erb"], &parts, 0) {
@@ -71,6 +71,16 @@ pub fn start(master_password: &str) {
                     }
                 },
                 // File Commands
+                "paste-file" | "pf" => {
+                    if validate_args(&["paste-file", "pf"], &parts, 1) {
+                        file_commands::paste_file(&mut db, &parts, &current_directory, &initial_dir);
+                    }
+                },
+                "cut-paste-file" | "cutpastefile" | "cpf" => {
+                    if validate_args(&["cut-paste-file","cutpastefile","cpf"], &parts, 1) {
+                        file_commands::cut_paste_file(&mut db, &parts, &current_directory, &initial_dir);
+                    }
+                },
                 "restore-all-files" | "resallfiles" | "raf" => {
                     if validate_args(&["restore-all-files","resallfiles","raf"], &parts, 0) {
                         file_commands::restore_all_files(&mut db);
@@ -139,6 +149,15 @@ pub fn start(master_password: &str) {
                 "encrypt-file" | "encfile" | "encf" => {
                     if validate_args(&["encrypt-file","encfile", "encf"], &parts, 1) {
                         file_commands::encrypt_file(&mut db, &parts, &initial_dir);
+                    }
+                },
+                "cut-add-file" | "cutaddfile" | "caf" => {
+                    if validate_args(&["cut-add-file","cutaddfile", "caf"], &parts, 2) {
+                        if file_commands::cut_add_file(&mut db, &parts, &current_directory, &initial_dir) {
+                            if let Ok(dir) = std::env::current_dir() {
+                                current_directory = dir;
+                            }
+                        }
                     }
                 },
                 "add-file" | "addfile" | "af" => {

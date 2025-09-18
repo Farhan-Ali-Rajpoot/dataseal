@@ -26,6 +26,7 @@ PATH COMMANDS:
     cd <dir>                  Change current directory
 
 FILE COMMANDS:
+    cut-add-file <name> <filename>      cutaddfile,caf
     add-file <name> <filename>          addfile, af
     list-files                          lsfiles, lf
     list-encrypted-files                lsencfiles, lencf

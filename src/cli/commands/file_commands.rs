@@ -4,6 +4,25 @@ use colored::*;
 use crate::db::{Database, FileEntry};
 
 
+
+pub fn paste_file(db: &mut Database, parts: &[&str],current_dir: &Path, initial_dir: &Path) -> bool {
+    let file_name = parts[1];
+
+    run_in_dir(initial_dir, || {
+        db.paste_file(file_name, current_dir.to_string_lossy().as_ref())
+    })
+    
+}
+
+pub fn cut_paste_file(db: &mut Database, parts: &[&str],current_dir: &Path, initial_dir: &Path) -> bool {
+    let file_name = parts[1];
+
+    run_in_dir(initial_dir, || {
+        db.cut_paste_file(file_name, current_dir.to_string_lossy().as_ref())
+    })
+    
+}
+
 pub fn restore_all_files(db: &mut Database) -> bool {
     db.restore_all_files()
 }
@@ -46,6 +65,32 @@ pub fn add_file(
         db.add_file(name, full_path.to_string_lossy().as_ref())
     })
 }
+
+pub fn cut_add_file(
+    db: &mut Database,
+    parts: &[&str],
+    current_dir: &Path,
+    initial_dir: &Path
+) -> bool {
+    let name = parts[1];
+    let filename = parts[2];
+
+    let full_path = if Path::new(filename).is_absolute() {
+        PathBuf::from(filename)
+    } else {
+        current_dir.join(filename)
+    };
+
+    if !full_path.exists() {
+        eprintln!("{}: file not found", full_path.display().to_string().red());
+        return false;
+    }
+
+    run_in_dir(initial_dir, || {
+        db.cut_add_file(name, full_path.to_string_lossy().as_ref())
+    })
+}
+
 
 pub fn encrypt_file(db: &mut Database, parts: &[&str], initial_dir: &Path) -> bool {
     let filename = parts[1];

@@ -17,7 +17,7 @@ struct Args {
     #[arg(long)]
     gui: bool,
 
-    /// Master password for CLI mode
+    /// Master password for CLI mode.
     #[arg(short, long)]
     password: Option<String>,
 }

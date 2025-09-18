@@ -1,12 +1,10 @@
 # --- Rust build artifacts ---
-/target/*
-!/target/deploy/
-# /target/deploy/*
+/target
 
 **/*.rs.bk
 
 # --- Local database and runtime data ---
-/src/_database
+/.cache
 
 # --- OS / editor junk ---
 *.swp

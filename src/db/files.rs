@@ -11,7 +11,146 @@ use crate::db::enc_keys::{unwrap_item_key, wrap_item_key, generate_item_key};
 
 
 impl Database {
-        // Add file
+    // Add file
+    pub fn cut_add_file(&mut self, name: &str, file_path: &str) -> bool {
+        let path = Path::new(file_path);
+
+        // ✅ Ensure source path exists
+        if !path.exists() {
+            println!("❌ Source path does not exist: {}", file_path);
+            return false;
+        }
+
+        // ✅ Reject folders
+        if !path.is_file() {
+            println!("❌ '{}' is a directory, only files can be added", file_path);
+            return false;
+        }
+
+        // Detect extension
+        let extension = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("unknown")
+            .to_lowercase();
+
+        // Select subfolder based on extension
+        let subfolder = self.get_sub_folder(&extension);
+
+        // Ensure subfolder exists
+        let target_dir = format!("{}/{}", self.decrypted_files_dir, subfolder);
+        if !Path::new(&target_dir).exists() {
+            fs::create_dir(&target_dir).expect("⚠️ Failed to create subfolder");
+        }
+
+        // Destination path
+        let temp_file_name = path.file_name().unwrap().to_str().unwrap();
+        let file_name = self.get_unique_file_name(temp_file_name);
+        let dest_path = format!("{}/{}", target_dir, file_name);
+
+        // Check size limit
+        let metadata = fs::metadata(path).expect("⚠️ Failed to read file metadata");
+        let file_size_bytes = metadata.len();
+        let file_size_mb = file_size_bytes as f64 / (1024.0 * 1024.0);
+        let max_size_bytes = (self.config.max_file_size_mb * 1024 * 1024) as u64;
+
+        if file_size_bytes > max_size_bytes {
+            println!(
+                "❌ File '{}' exceeds max size of {} MB",
+                file_name, self.config.max_file_size_mb
+            );
+            return false;
+        }
+
+        // Prevent duplicates
+        if self.meta.files.iter().any(|f| f.name == name) {
+            println!("❌ File with name '{}' already exists in meta!", name);
+            return false;
+        }
+        if self.encrypted_meta.files.iter().any(|f| f.name == name) {
+            println!("❌ File with name '{}' already exists in encrypted files!", name);
+            return false;
+        }
+
+        let item_key = generate_item_key();
+        let encrypted_item_key = match wrap_item_key(&item_key, &self.master_key) {
+            Some(eik) => eik,
+            None => {
+                println!("❌ Failed to generate encrypted item key for file: {}", name);
+                return false;
+            }
+        };
+
+        // Try restore if missing
+        if let Some(index) = self.meta.files.iter().position(|f| f.name == name) {
+            let file_missing = !Path::new(&self.meta.files[index].file_path).exists();
+                
+            if file_missing {
+        
+                // Now safely borrow mutably after copy is done
+                let entry = &mut self.meta.files[index];
+                entry.file_path = dest_path.clone();
+                entry.file_name = file_name.to_string();
+                entry.encrypted_item_key = encrypted_item_key;
+                entry.size = file_size_mb.to_string();
+                entry.extension = extension.clone();
+                entry.is_recycled = false;
+                entry.created_at = time::now();
+                entry.updated_at = 0.to_string();
+
+                if let Some(src) = path.to_str() {
+                    if !self.copy_file(src, dest_path.as_str()) {
+                        println!("Failed to copy file!");
+                        return false;
+                    }else {
+                        self.save_meta();
+                    } 
+                } else {
+                    println!("Invalid path (not UTF-8)!");
+                    return false;
+                }
+            
+                println!("♻️ Restored missing file for '{}'", name);
+                return true;
+            }
+        }
+
+        self.meta.files.push(FileEntry {
+            name: name.to_string(),
+            file_name: file_name.to_string(),
+            encrypted_item_key,
+            file_path: dest_path.clone(),
+            size: file_size_mb.to_string(),
+            extension: extension.clone(),
+            is_recycled: false,
+            is_encrypted: false,
+            created_at: time::now(),
+            updated_at: 0.to_string(),
+        });
+
+        if let Some(src) = path.to_str() {
+            if !self.copy_file(src, dest_path.as_str()) {
+                println!("Failed to copy file!");
+                return false;
+            }else {
+                self.save_meta();
+            }
+            if let Err(e) = remove_file(src) {
+                println!("Failed to delete original file");
+                return false;
+            }
+        } else {
+            println!("Invalid path (not UTF-8)!");
+            return false;
+        }
+
+        println!(
+            "✅ File added: {} (.{}) size <{} MB> (..cutted..)",
+            name, extension, file_size_mb
+        );
+        true
+    }
+
     pub fn add_file(&mut self, name: &str, file_path: &str) -> bool {
         let path = Path::new(file_path);
 
@@ -141,10 +280,65 @@ impl Database {
         }
 
         println!(
-            "✅ File added: {} (.{}) size <{} MB>",
+            "✅ File added: {} (.{}) size <{} MB> (..copied..)",
             name, extension, file_size_mb
         );
         true
+    }
+
+    pub fn paste_file(&mut self, name: &str, dst_path: &str) -> bool {
+            if let Some(file) = self.meta.files.iter().find(|f| f.name == name).cloned() {
+
+            if !Path::new(&file.file_path).exists() {
+                println!("❌ File don't exists or it is corrupted");
+                return false;
+            }
+
+            let target_path = format!("{}/{}",dst_path,file.file_name);
+        
+            if !self.copy_file(&file.file_path, &target_path) {
+                println!("❌ Failed to copy file");
+                return false;
+            }
+
+            println!("✅ File pasted Successfully! (..copied..)");
+            true 
+        } else {
+            println!("❌ No files found in Databse ( If it is encrypted, decrypt it first )");
+            return false;
+        } 
+    }
+
+    pub fn cut_paste_file(&mut self, name: &str, dst_path: &str) -> bool {
+            if let Some(file) = self.meta.files.iter().find(|f| f.name == name).cloned() {
+
+            if !Path::new(&file.file_path).exists() {
+                println!("❌ File don't exists or it is corrupted");
+                return false;
+            }
+
+            let target_path = format!("{}/{}",dst_path,file.file_name);
+        
+            if !self.copy_file(&file.file_path, &target_path) {
+                println!("❌ Failed to copy file");
+                return false;
+            }
+
+            self.meta.files.retain(|f| f.name != file.name);
+
+            if let Err(e) = remove_file(&file.file_path) {
+                println!("❌ Failed to remove original file");
+                return false;
+            }
+
+            println!("✅ File pasted Successfully! (..cutted..)");
+            self.save_meta();
+
+            true 
+        } else {
+            println!("❌ No files found in Databse ( If it is encrypted, decrypt it first )");
+            return false;
+        } 
     }
 
     pub fn encrypt_file(&mut self, file_name: &str) -> bool {
@@ -197,6 +391,7 @@ impl Database {
             }
 
             self.save_encrypted_meta();
+            self.save_meta();
 
             println!("🔒 File encrypted to: {}", encrypted_path);
             true

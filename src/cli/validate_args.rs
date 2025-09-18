@@ -27,6 +27,15 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
         println!("{}", "──────────────────────────────".bright_black());
 
         match input_cmd {
+            "cut-paste-file" | "cutpastefile" | "cpf" => print_usage(&[
+                "cut-paste-file <filename",
+                "cutpastefile <filname>",
+                "cpf <filename",
+            ]),
+            "paste-file" | "pf" => print_usage(&[
+                "paste-file <filename",
+                "pf <filename",
+            ]),
             "change-root-password" | "chgrootpass" | "crp" => print_usage(&[
                 "change-root-password <oldpassword> <newpassword>",
                 "chgrootpass <oldpassword> <newpassword>",
@@ -150,6 +159,11 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
                 "encrypt-file <filename>",
                 "encfile <filename>",
                 "encf <filename>",
+            ]),
+            "cut-add-file" | "cutaddfile" | "caf" => print_usage(&[
+                "cut-add-file <name> <filename>",
+                "cutaddfile <name> <filename>",
+                "caf <name> <filename>",
             ]),
             "add-file" | "addfile" | "af" => print_usage(&[
                 "add-file <name> <filename>",
