@@ -20,26 +20,17 @@ Dataseal uses AES-256-GCM encryption with PBKDF2-HMAC-SHA256 key derivation, and
 ### Linux (bash) : 
 ```bash
 # Download the latest release
-curl -L https://github.com/Farhan-Ali-Rajpoot/dataseal/blob/main/release/latest/download/dataseal-linux-x86_64-latest.tar.gz -o dataseal.tar.gz
-# Extract the binary
+curl -L https://github.com/Farhan-Ali-Rajpoot/dataseal/raw/main/release/latest/download/dataseal-linux-x86_64-latest.tar.gz -o dataseal.tar.gz
 tar -xzf dataseal.tar.gz
-# Move to a folder in PATH
 sudo mv dataseal /usr/local/bin/
-# Verify installation
 dataseal --help
 
 ```
 ### Windows (power_shell)  :
 ```powershell
-# Create bin folder in user profile
 mkdir $env:USERPROFILE\bin
-# Download the latest release
-curl -L https://github.com/Farhan-Ali-Rajpoot/dataseal/blob/main/release/latest/download/dataseal-windows-x86_64-latest.zip -o dataseal.zip
-# Extract to bin folder
+curl -L https://github.com/Farhan-Ali-Rajpoot/dataseal/raw/main/release/latest/download/dataseal-windows-x86_64-latest.zip -o dataseal.zip
 Expand-Archive dataseal.zip -DestinationPath $env:USERPROFILE\bin
-# Add to PATH for current user
 [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$env:USERPROFILE\bin", [EnvironmentVariableTarget]::User)
-# Verify installation
 dataseal --help
-
 ```
