@@ -11,8 +11,9 @@ USAGE:
 
 OPTIONS:
     -h, --help        Show this help message
-    -c, --cli         Launch CLI interface
-    -g, --gui         Launch GUI interface (default)
+    -c, --cli         Launch CLI interface (default)
+    -g, --gui         Launch GUI interface
+    -v, --version     Show version of dataseal
 
 SYSTEM COMMANDS:
     help                      Show this help document

@@ -4,9 +4,14 @@ pub mod db;
 pub mod cli;
 pub mod gui;
 
+use crate::cli::help_document::{help_document};
+
 #[derive(Parser)]
-#[command(name = "DataSeal")]
-#[command(about = "A simple database app with CLI and GUI modes", long_about = None)]
+#[command(
+    name = "DataSeal",
+    about = "A simple database app with CLI and GUI modes",
+    version = env!("CARGO_PKG_VERSION")  // ✅ adds built-in -V/--version
+)]
 struct Args {
     /// Launch GUI version (default is CLI)
     #[arg(long)]
@@ -17,12 +22,28 @@ struct Args {
     password: Option<String>,
 }
 
+
 fn main() {
+    let mut args_raw = std::env::args();
+    let _bin = args_raw.next();
+
+    match args_raw.next().as_deref() {
+        Some("-v") | Some("version") | Some("--version") => {
+            println!("DataSeal {}", env!("CARGO_PKG_VERSION"));
+            return;
+        },
+        Some("help") | Some("--help") | Some("-h") => {
+            println!("{}", help_document());
+        },
+        _ => {}
+    }
+
+
+
     let args = Args::parse();
 
     if args.gui {
-        println!("🎨 Launching DataSeal GUI...");
-        gui::main::start(); // your GUI entrypoint (not yet implemented)
+        println!("Coming soon...");
         return;
     }
 
@@ -36,4 +57,5 @@ fn main() {
 
     println!("🚀 Launching DataSeal CLI...");
     cli::repl::start(&master_password);
+    // call your CLI logic here
 }

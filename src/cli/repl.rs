@@ -261,6 +261,9 @@ pub fn start(master_password: &str) {
                         fs_commands::clear();
                     }
                 },
+                "version" | "--version" | "-v" => {
+                    println!("Dataseal {}", env!("CARGO_PKG_VERSION"));
+                }
                 "exit" | "quit" => return,
                 _ => println!("{}", unknown_command_message(cmd)),
             }       
