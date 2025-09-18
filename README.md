@@ -20,7 +20,7 @@ Dataseal uses AES-256-GCM encryption with PBKDF2-HMAC-SHA256 key derivation, and
 ### Linux (bash) : 
 ```bash
 # Download the latest release
-curl -L https://github.com/FARHAN-ALI-RAJPOOT/dataseal/releases/latest/download/dataseal-linux-x86_64-latest.tar.gz -o dataseal.tar.gz
+curl -L https://github.com/Farhan-Ali-Rajpoot/dataseal/blob/main/release/latest/download/dataseal-linux-x86_64-latest.tar.gz -o dataseal.tar.gz
 # Extract the binary
 tar -xzf dataseal.tar.gz
 # Move to a folder in PATH
@@ -34,7 +34,7 @@ dataseal --help
 # Create bin folder in user profile
 mkdir $env:USERPROFILE\bin
 # Download the latest release
-curl -L https://github.com/FARHAN-ALI-RAJPOOT/dataseal/releases/latest/download/dataseal-windows-x86_64-latest.zip -o dataseal.zip
+curl -L https://github.com/Farhan-Ali-Rajpoot/dataseal/blob/main/release/latest/download/dataseal-windows-x86_64-latest.zip -o dataseal.zip
 # Extract to bin folder
 Expand-Archive dataseal.zip -DestinationPath $env:USERPROFILE\bin
 # Add to PATH for current user
