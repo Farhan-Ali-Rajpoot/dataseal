@@ -17,7 +17,7 @@ Dataseal uses AES-256-GCM encryption with PBKDF2-HMAC-SHA256 key derivation, and
 
 💻 Installation
 
-### Linux : 
+### Linux (bash) : 
 ```bash
 curl -L https://github.com/FARHAN-ALI-RAJPOOT/dataseal/releases/latest/download/dataseal-linux-x86_64.tar.gz -o dataseal.tar.gz
 tar -xzf dataseal.tar.gz
