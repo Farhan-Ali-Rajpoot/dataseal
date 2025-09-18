@@ -17,17 +17,18 @@ Dataseal uses AES-256-GCM encryption with PBKDF2-HMAC-SHA256 key derivation, and
 
 💻 Installation
 
-Linux (bash) : 
-
+### Linux : 
+```bash
 curl -L https://github.com/FARHAN-ALI-RAJPOOT/dataseal/releases/latest/download/dataseal-linux-x86_64.tar.gz -o dataseal.tar.gz
 tar -xzf dataseal.tar.gz
 sudo mv dataseal /usr/local/bin/
 dataseal --help
-
-Windows (power_shell)  :
-
+```
+### Windows (power_shell)  :
+```powershell
 mkdir $env:USERPROFILE\bin
 curl -L https://github.com/FARHAN-ALI-RAJPOOT/dataseal/releases/latest/download/dataseal-windows-x86_64.zip -o dataseal.zip
 Expand-Archive dataseal.zip -DestinationPath $env:USERPROFILE\bin
 [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$env:USERPROFILE\bin", [EnvironmentVariableTarget]::User)
 dataseal --help
+```
