@@ -11,6 +11,9 @@ use super::{
 };
 
 pub fn start(master_password: &str) {
+    // Clear Screen
+    fs_commands::clear();
+
     let mut db: Database = match Database::new(master_password) {
         Some(d) => d,
         None => {
@@ -18,9 +21,7 @@ pub fn start(master_password: &str) {
             return;
         }
     };
-    // Clear Screen
-    fs_commands::clear();
-
+    
     // db.add_file("nexa-env", "../Github/Nexa/.env");
     let mut current_directory: PathBuf = current_dir().unwrap();
     let initial_dir = current_directory.clone();
