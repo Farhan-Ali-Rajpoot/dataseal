@@ -1,5 +1,6 @@
 use std::io::{stdout, Write};
 use std::{env, fs};
+use std::process::Command;
 use colored::*;
 
 pub fn cd(path: &str) -> bool {
@@ -50,9 +51,19 @@ pub fn pwd() -> String {
     }
 }
 
+
 pub fn clear() {
-    // Clears the terminal screen
-    print!("\x1B[2J\x1B[1;1H");
-    // Flush to make sure it shows immediately
-    stdout().flush().unwrap();
+    if cfg!(target_os = "windows") {
+        // On Windows, use the `cls` command
+        let _ = Command::new("cmd")
+            .args(&["/C", "cls"])
+            .status();
+    } else {
+        // On Unix/Linux/macOS, use ANSI escape sequences
+        print!("\x1B[2J\x1B[3J\x1B[H");
+        // \x1B[2J -> clear screen
+        // \x1B[3J -> clear scrollback buffer
+        // \x1B[H  -> move cursor to top-left
+        stdout().flush().unwrap();
+    }
 }
