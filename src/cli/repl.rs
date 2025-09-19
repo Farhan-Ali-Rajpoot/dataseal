@@ -6,8 +6,8 @@ use colored::*;
 
 use super::{
     help_document::{help_document, unknown_command_message},
-    commands::{fs_commands, pass_commands, file_commands, auth_commands},
-    validate_args::validate_args,
+    commands::{fs_commands, pass_commands, file_commands, auth_commands, system_commands},
+    validate_args::{validate_args,print_usage},
 };
 
 pub fn start(master_password: &str) {
@@ -55,6 +55,12 @@ pub fn start(master_password: &str) {
             let parts: Vec<&str> = cmd.split_whitespace().collect();
 
             match parts[0] {
+                //System 
+                "database-info" | "di" => {
+                    if validate_args(&["storage-info","di"], &parts, 0) {
+                        system_commands::show_database_info(&mut db);
+                    }
+                }
                 // Auth 
                 "change-root-password" | "chgrootpass" | "crp" => {
                     if validate_args(&["change-root-password","chgrootpass","crp"], &parts, 2) {
@@ -71,6 +77,16 @@ pub fn start(master_password: &str) {
                     }
                 },
                 // File Commands
+                "decrypt-all-files" | "decallfiles" | "decaf" => {
+                    if validate_args(&["decrypt-all-files","decallfiles","decaf"], &parts, 0) {
+                        file_commands::decrypt_all_files(&mut db, &initial_dir);
+                    }
+                },
+                "encrypt-all-files" | "encallfiles" | "encaf" => {
+                    if validate_args(&["encrypt-all-files","encallfiles","encaf"], &parts, 0) {
+                        file_commands::encrypt_all_files(&mut db, &initial_dir);
+                    }
+                },
                 "paste-file" | "pf" => {
                     if validate_args(&["paste-file", "pf"], &parts, 1) {
                         file_commands::paste_file(&mut db, &parts, &current_directory, &initial_dir);
@@ -127,9 +143,11 @@ pub fn start(master_password: &str) {
                     }
                 },
                 "restore-file" | "resfile" | "rf" => {
-                    if validate_args(&["restore-file","resfile", "rf"], &parts, 1) {
-                        file_commands::restore_file(&mut db, &parts);
-                    }
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["restore-file <filename> <filename> ... ", "resfile <filename> <filename> ...", "rf <filename> <filename> ..."]);
+                        return;
+                    } 
+                    file_commands::restore_file(&mut db, &parts);
                 },
                 "delete-all-files" | "delallfiles" | "daf" => {
                     if validate_args(&["delete-all-files","delallfiles","daf"], &parts, 0) {
@@ -137,41 +155,61 @@ pub fn start(master_password: &str) {
                     }
                 },
                 "delete-file" | "delfile" | "df" => {
-                    if validate_args(&["delete-file","delfile", "df"], &parts, 1) {
-                        file_commands::delete_file(&mut db, &parts);
-                    }
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["delete-file <filename> <filename> ... ", "delfile <filename> <filename> ...", "df <filename> <filename> ..."]);
+                        return;
+                    } 
+                    file_commands::delete_file(&mut db, &parts);
                 },
                 "decrypt-file" | "decfile" | "decf"=> {
-                    if validate_args(&["decrypt-file","decfile", "decf"], &parts, 1) {
-                        file_commands::decrypt_file(&mut db, &parts, &initial_dir);
-                    }
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["decrypt-file <filename> <filename> ... ", "decfile <filename> <filename> ...", "decf <filename> <filename> ..."]);
+                        return
+                    } 
+                    file_commands::decrypt_file(&mut db, &parts, &initial_dir);
                 },
                 "encrypt-file" | "encfile" | "encf" => {
-                    if validate_args(&["encrypt-file","encfile", "encf"], &parts, 1) {
-                        file_commands::encrypt_file(&mut db, &parts, &initial_dir);
-                    }
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["encrypt-file <filename> <filename> ... ", "encfile <filename> <filename> ...", "encf <filename> <filename> ..."]);
+                        return
+                    } 
+                    file_commands::encrypt_file(&mut db, &parts, &initial_dir);
                 },
                 "cut-add-file" | "cutaddfile" | "caf" => {
-                    if validate_args(&["cut-add-file","cutaddfile", "caf"], &parts, 2) {
-                        if file_commands::cut_add_file(&mut db, &parts, &current_directory, &initial_dir) {
-                            if let Ok(dir) = std::env::current_dir() {
-                                current_directory = dir;
-                            }
+                    if parts.len() - 1 == 0 || parts.len() - 1 == 1 {
+                        print_usage(&["cut-add-file <name> <filepath> <name> <filepath> ...","cutaddfile <name> <filepath> <name> <filepath> ...",
+                        "caf <name> <filepath> <name> <filepath> ..."])
+                    }
+                    if file_commands::cut_add_file(&mut db, &parts, &current_directory, &initial_dir) {
+                        if let Ok(dir) = std::env::current_dir() {
+                            current_directory = dir;
                         }
                     }
                 },
                 "add-file" | "addfile" | "af" => {
-                    if validate_args(&["add-file","addfile", "af"], &parts, 2) {
-                        if file_commands::add_file(&mut db, &parts, &current_directory, &initial_dir) {
-                            if let Ok(dir) = std::env::current_dir() {
-                                current_directory = dir;
-                            }
+                    if parts.len() - 1 == 0 || parts.len() - 1 == 1 {
+                        print_usage(&["add-file <name> <filepath> <name> <filepath> ...","addfile <name> <filepath> <name> <filepath> ...",
+                        "af <name> <filepath> <name> <filepath> ..."])
+                    } 
+                    if file_commands::add_file(&mut db, &parts, &current_directory, &initial_dir) {
+                        if let Ok(dir) = std::env::current_dir() {
+                            current_directory = dir;
                         }
                     }
                 },
                 // Password Commands
-                "restore-all-password" | "resallpass" | "rap" => {
-                    if validate_args(&["restore-all-password","resallpass","rap"], &parts, 0) {
+                "decrypt-all-passwords" | "decallpass" | "decap" => {
+                    if validate_args(&["decrypt-all-passwords","decallpass","decap"], &parts, 0) {
+                        pass_commands::decrypt_all_passwords(&mut db);
+                    }
+                },
+                "encrypt-all-passwords" | "encallpass" | "encap" => {
+                    if validate_args(&["encrypt-all-passwords","encallpass","encap"], &parts, 0) {
+                        pass_commands::encrypt_all_passwords(&mut db);
+                    }
+                },
+                "restore-all-passwords" | "resallpass" | "rap" => {
+                    if validate_args(&["restore-all-passwords","resallpass","rap"], &parts, 0) {
                         pass_commands::restore_all_passwords(&mut db);
                     }
                 }
@@ -216,9 +254,11 @@ pub fn start(master_password: &str) {
                     }
                 },
                 "restore-password" | "respass" | "rp" => {
-                    if validate_args(&["restore-password", "respass", "rp"], &parts, 1) {
-                        pass_commands::restore_password(&mut db, &parts);
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["restore-password <name> <name> ...", "respass <name> <name> ...", "rp <name> <name> ..."]);
+                        return;
                     }
+                    pass_commands::restore_password(&mut db, &parts);
                 },
                 "delete-all-passwords" | "delallpass" | "dap" => {
                     if validate_args(&["delete-all-passwords", "delallpass", "dap"], &parts, 0) {
@@ -226,29 +266,38 @@ pub fn start(master_password: &str) {
                     }
                 },
                 "delete-password" | "delpass" | "dp" => {
-                    if validate_args(&["delete-password", "delpass", "dp"], &parts, 1) {
-                        pass_commands::delete_password(&mut db, &parts);
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["delete-password <name> <name> ...", "delpass <name> <name> ...", "dp <name> <name> ..."]);
+                        return
                     }
+                    pass_commands::delete_password(&mut db, &parts);
                 },
                 "decrypt-password" | "decpass" | "decp" => {
-                    if validate_args(&["decrypted-password","decpass", "decp"], &parts, 1) {
-                        pass_commands::decrypt_password(&mut db, &parts);
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["decrypt-password <name> <name> ...", "decpass <name> <name> ...", "decp <name> <name> ..."]);
+                        return;
                     }
+                    pass_commands::decrypt_password(&mut db, &parts);
                 },
                 "encrypt-password" | "encpass" | "encp"=> {
-                    if validate_args(&["encrypt-password","encpass", "encp"], &parts, 1) {
-                        pass_commands::encrypt_password(&mut db, &parts);
+                    if parts.len() - 1 == 0 {
+                        print_usage(&["encrypt-password <name> <name> ...", "encpass <name> <name> ...", "encp <name> <name> ..."])
                     }
+                    pass_commands::encrypt_password(&mut db, &parts);
                 },
                 "change-password" | "chgpass" | "cp" => {
-                    if validate_args(&["change-password", "chgpass", "cp"], &parts, 2) {
-                        pass_commands::change_password(&mut db, &parts);
+                    if parts.len() == 0 || parts.len() == 1 {
+                        print_usage(&["change-password <name> <newpassword> <name> <newpass> ...", "chgpass <name> <newpassword> <name> <newpass> ...",
+                        "cp <name> <newpassword> <name> <newpass> ..."])
                     }
+                    pass_commands::change_password(&mut db, &parts);
                 },
                 "add-password" | "addpass" | "ap" => {
-                    if validate_args(&["addpass", "add-password", "ap"], &parts, 2) {
-                        pass_commands::add_password(&mut db, &parts);
-                    }
+                    if parts.len() - 1 == 0 || parts.len() - 1 == 1 {
+                        print_usage(&["add-password <name> <password> <name> <password> ...", "addpass <name> <password> <name> <password> ...",
+                        "ap <name> <password> <name> <password> ..."])
+                    } 
+                    pass_commands::add_password(&mut db, &parts);
                 },
                 // Default Commands
                 "help" => {

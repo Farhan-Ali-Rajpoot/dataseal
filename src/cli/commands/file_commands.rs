@@ -4,6 +4,17 @@ use colored::*;
 use crate::db::{Database, FileEntry};
 
 
+pub fn decrypt_all_files(db: &mut Database, initial_dir: &Path) -> bool {
+    run_in_dir(initial_dir,|| {
+        db.decrypt_all_files()
+    })
+}
+
+pub fn encrypt_all_files(db: &mut Database, initial_dir: &Path) -> bool {
+    run_in_dir(initial_dir, || {
+        db.encrypt_all_files()
+    })
+}
 
 pub fn paste_file(db: &mut Database, parts: &[&str],current_dir: &Path, initial_dir: &Path) -> bool {
     let file_name = parts[1];
@@ -47,24 +58,49 @@ pub fn add_file(
     current_dir: &Path,
     initial_dir: &Path
 ) -> bool {
-    let name = parts[1];
-    let filename = parts[2];
+    let args = &parts[1..];
 
-    let full_path = if Path::new(filename).is_absolute() {
-        PathBuf::from(filename)
-    } else {
-        current_dir.join(filename)
-    };
-
-    if !full_path.exists() {
-        eprintln!("{}: file not found", full_path.display().to_string().red());
+    if args.is_empty() {
+        eprintln!("No name/file pairs provided.");
         return false;
     }
 
-    run_in_dir(initial_dir, || {
-        db.add_file(name, full_path.to_string_lossy().as_ref())
-    })
+    if args.len() % 2 != 0 {
+        eprintln!("Mismatched arguments: you must provide name/file pairs.");
+        return false;
+    }
+
+    let mut all_ok = true;
+
+    for pair in args.chunks(2) {
+        let name = pair[0];
+        let filename = pair[1];
+
+        let full_path = if Path::new(filename).is_absolute() {
+            PathBuf::from(filename)
+        } else {
+            current_dir.join(filename)
+        };
+
+        if !full_path.exists() {
+            eprintln!("{}: file not found", full_path.display().to_string().red());
+            all_ok = false;
+            continue;
+        }
+
+        let ok = run_in_dir(initial_dir, || {
+            db.add_file(name, full_path.to_string_lossy().as_ref())
+        });
+
+        if !ok {
+            eprintln!("Failed to add file for: {}", name);
+            all_ok = false;
+        }
+    }
+
+    all_ok
 }
+
 
 pub fn cut_add_file(
     db: &mut Database,
@@ -72,43 +108,93 @@ pub fn cut_add_file(
     current_dir: &Path,
     initial_dir: &Path
 ) -> bool {
-    let name = parts[1];
-    let filename = parts[2];
+    let args = &parts[1..];
 
-    let full_path = if Path::new(filename).is_absolute() {
-        PathBuf::from(filename)
-    } else {
-        current_dir.join(filename)
-    };
-
-    if !full_path.exists() {
-        eprintln!("{}: file not found", full_path.display().to_string().red());
+    if args.is_empty() {
+        eprintln!("No name/file pairs provided.");
         return false;
     }
 
-    run_in_dir(initial_dir, || {
-        db.cut_add_file(name, full_path.to_string_lossy().as_ref())
-    })
+    if args.len() % 2 != 0 {
+        eprintln!("Mismatched arguments: you must provide name/file pairs.");
+        return false;
+    }
+
+    let mut all_ok = true;
+
+    for pair in args.chunks(2) {
+        let name = pair[0];
+        let filename = pair[1];
+
+        let full_path = if Path::new(filename).is_absolute() {
+            PathBuf::from(filename)
+        } else {
+            current_dir.join(filename)
+        };
+
+        if !full_path.exists() {
+            eprintln!("{}: file not found", full_path.display().to_string().red());
+            all_ok = false;
+            continue;
+        }
+
+        let ok = run_in_dir(initial_dir, || {
+            db.cut_add_file(name, full_path.to_string_lossy().as_ref())
+        });
+
+        if !ok {
+            eprintln!("Failed to cut-add file for: {}", name);
+            all_ok = false;
+        }
+    }
+
+    all_ok
 }
 
 
+
 pub fn encrypt_file(db: &mut Database, parts: &[&str], initial_dir: &Path) -> bool {
-    let filename = parts[1];
+    let filenames = &parts[1..];
+
     run_in_dir(initial_dir, || {
-        db.encrypt_file(filename)
+        let mut all_ok = true;
+        for filename in filenames {
+            let ok = db.encrypt_file(filename);
+            if !ok {
+                all_ok = false;
+            }
+        }
+        all_ok
     })
 }
 
 pub fn decrypt_file(db: &mut Database, parts: &[&str], initial_dir: &Path) -> bool {
-    let filename = parts[1];
+    let filenames = &parts[1..];
+
     run_in_dir(initial_dir, || {
-        db.decrypt_file(filename)
+        let mut all_ok = true;
+        for filename in filenames {
+            let ok = db.decrypt_file(filename);
+            if !ok {
+                all_ok = false;
+            }
+        }
+        all_ok
     })
 }
 
+
 pub fn delete_file(db: &mut Database, parts: &[&str]) -> bool {
-    let name = parts[1];
-    db.delete_file(name)
+    let filenames = &parts[1..];
+
+    let mut all_ok = true;
+    for filename in filenames {
+        let ok = db.delete_file(filename);
+        if !ok {
+            all_ok = false;
+        }
+    }
+    all_ok
 }
 
 pub fn delete_all_files(db: &mut Database) -> bool {
@@ -116,8 +202,16 @@ pub fn delete_all_files(db: &mut Database) -> bool {
 }
 
 pub fn restore_file(db: &mut Database, parts: &[&str]) -> bool {
-    let name = parts[1];
-    db.restore_file(name)
+    let filenames = &parts[1..];
+
+    let mut all_ok = true;
+    for filename in filenames {
+        let ok = db.restore_file(filename);
+        if !ok {
+            all_ok = false;
+        }
+    }
+    all_ok
 }
 
 pub fn list_decrypted_files(db: &mut Database) -> bool {

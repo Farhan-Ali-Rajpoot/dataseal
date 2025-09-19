@@ -4,13 +4,224 @@ use std::{fs, fs::{File,metadata,remove_file,create_dir_all}};
 use std::path::{Path};
 use std::io::{Read, Write, BufWriter};
 use std::io::stdout;
-use std::io::Write as IoWrite; // for flush
 
 use crate::db::time;
 use crate::db::enc_keys::{unwrap_item_key, wrap_item_key, generate_item_key};
 
 
 impl Database {
+    pub fn encrypt_all_files(&mut self) -> bool {
+        let mut success_count = 0;
+        let mut failure_count = 0;
+
+        // Collect files that need encryption
+        let files_to_encrypt: Vec<FileEntry> = self.meta.files
+            .iter()
+            .filter(|f| !f.is_encrypted)
+            .cloned()
+            .collect();
+
+        let total_to_process = files_to_encrypt.len();
+        
+        if total_to_process == 0 {
+            println!("ℹ️  No unencrypted files found to encrypt.");
+            return true;
+        }
+
+        println!("🔒 Encrypting {} files:", total_to_process);
+
+        for (current, entry) in files_to_encrypt.iter().enumerate() {
+            print!("  {}/{}: {}... ", current + 1, total_to_process, entry.name);
+            
+            // Check if file exists
+            if !Path::new(&entry.file_path).exists() {
+                println!("❌ (file missing)");
+                failure_count += 1;
+                continue;
+            }
+
+            // Encrypted file path
+            let encrypted_path = format!("{}/{}.enc", self.encrypted_dir, entry.name);
+
+            // Unwrap item key
+            let key = match unwrap_item_key(&entry.encrypted_item_key, &self.master_key) {
+                Some(k) => k,
+                None => {
+                    println!("❌ (key error)");
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            // Encrypt the file
+            let is_encrypted = self.encrypt_file_data(&entry.file_path, &encrypted_path, &key);
+            if !is_encrypted {
+                if Path::new(&encrypted_path).exists() {
+                    let _ = remove_file(&encrypted_path); // rollback
+                }
+                println!("❌ (encryption failed)");
+                failure_count += 1;
+                continue;
+            }
+
+            // Add entry to encrypted_meta
+            self.encrypted_meta.files.push(FileEntry {
+                name: entry.name.clone(),
+                file_name: entry.file_name.clone(),
+                file_path: encrypted_path.clone(),
+                size: entry.size.clone(),
+                extension: entry.extension.clone(),
+                encrypted_item_key: entry.encrypted_item_key.clone(),
+                is_encrypted: true,
+                is_recycled: false,
+                created_at: entry.created_at.clone(),
+                updated_at: time::now(),
+            });
+
+            // Remove from meta
+            self.meta.files.retain(|f| f.name != entry.name);
+
+            // Delete original file
+            if let Err(e) = remove_file(&entry.file_path) {
+                eprintln!("⚠️ Failed to delete original file: {}", e);
+            }
+
+            success_count += 1;
+        }
+
+        // Save metadata if we had successful operations
+        if success_count > 0 {
+            self.save_encrypted_meta();
+            self.save_meta();
+        }
+
+        // Log results
+        println!("\n📊 Encryption Summary:");
+        println!("   Total:    {}", total_to_process);
+        println!("   Success:  {}", success_count);
+        println!("   Failed:   {}", failure_count);
+        
+        if success_count > 0 && failure_count == 0 {
+            println!("✅ Successfully encrypted all {} files.", success_count);
+        } else if success_count > 0 {
+            println!("⚠️  Encrypted {}/{} files. {} failed.", success_count, total_to_process, failure_count);
+        } else {
+            println!("❌ Failed to encrypt any files. {}/{} failed.", failure_count, total_to_process);
+        }
+
+        failure_count == 0
+    }
+
+    pub fn decrypt_all_files(&mut self) -> bool {
+        let mut success_count = 0;
+        let mut failure_count = 0;
+
+        // Collect files that need decryption
+        let files_to_decrypt: Vec<FileEntry> = self.encrypted_meta.files
+            .iter()
+            .filter(|f| f.is_encrypted)
+            .cloned()
+            .collect();
+
+        let total_to_process = files_to_decrypt.len();
+        
+        if total_to_process == 0 {
+            println!("ℹ️  No encrypted files found to decrypt.");
+            return true;
+        }
+
+        println!("🔓 Decrypting {} files:", total_to_process);
+
+        for (current, entry) in files_to_decrypt.iter().enumerate() {
+            print!("  {}/{}: {}... ", current + 1, total_to_process, entry.name);
+            
+            // Check if encrypted file exists
+            if !Path::new(&entry.file_path).exists() {
+                println!("❌ (encrypted file missing)");
+                failure_count += 1;
+                continue;
+            }
+
+            let subfolder = self.get_sub_folder(&entry.extension);
+            let decrypted_path = format!("{}/{}/{}", self.decrypted_files_dir, subfolder, entry.file_name);
+
+            // Ensure target directory exists
+            let target_dir = format!("{}/{}", self.decrypted_files_dir, subfolder);
+            if !Path::new(&target_dir).exists() {
+                if let Err(e) = create_dir_all(&target_dir) {
+                    println!("❌ Failed to create directory: {}",e);
+                    failure_count += 1;
+                    continue;
+                }
+            }
+
+            // Decrypt the file
+            let key = match unwrap_item_key(&entry.encrypted_item_key, &self.master_key) {
+                Some(k) => k,
+                None => {
+                    println!("❌ (key error)");
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            let is_decrypted = self.decrypt_file_data(&entry.file_path, &decrypted_path, &key);
+            if !is_decrypted {
+                if Path::new(&decrypted_path).exists() {
+                    let _ = remove_file(&decrypted_path); // rollback
+                }
+                println!("❌ (decryption failed)");
+                failure_count += 1;
+                continue;
+            }
+
+            // Add entry back to meta
+            self.meta.files.push(FileEntry {
+                name: entry.name.clone(),
+                file_name: entry.file_name.clone(),
+                encrypted_item_key: entry.encrypted_item_key.clone(),
+                file_path: decrypted_path.clone(),
+                size: entry.size.clone(),
+                extension: entry.extension.clone(),
+                is_encrypted: false,
+                is_recycled: false,
+                created_at: entry.created_at.clone(),
+                updated_at: time::now(),
+            });
+
+            // Remove from encrypted_meta
+            self.encrypted_meta.files.retain(|f| f.name != entry.name);
+
+            // Delete encrypted file
+            if let Err(e) = remove_file(&entry.file_path) {
+                eprintln!("⚠️ Failed to delete encrypted file: {}", e);
+            }
+
+            success_count += 1;
+        }
+
+        // Save metadata if we had successful operations
+        if success_count > 0 {
+            self.save_encrypted_meta();
+            self.save_meta();
+        }
+
+        // Log results
+        println!("\n📊 Decryption Summary:");
+        println!("   Total:    {}", total_to_process);
+        println!("   Success:  {}", success_count);
+        println!("   Failed:   {}", failure_count);
+        
+        if success_count > 0 && failure_count == 0 {
+            println!("✅ Successfully decrypted all {} files.", success_count);
+        } else if success_count > 0 {
+            println!("⚠️  Decrypted {}/{} files. {} failed.", success_count, total_to_process, failure_count);
+        } else {
+            println!("❌ Failed to decrypt any files. {}/{} failed.", failure_count, total_to_process);
+        }
+
+        failure_count == 0
+    }
     // Add file
     pub fn cut_add_file(&mut self, name: &str, file_path: &str) -> bool {
         let path = Path::new(file_path);
@@ -136,11 +347,11 @@ impl Database {
                 self.save_meta();
             }
             if let Err(e) = remove_file(src) {
-                println!("Failed to delete original file");
+                println!("❌ Failed to delete original file: {}",e);
                 return false;
             }
         } else {
-            println!("Invalid path (not UTF-8)!");
+            println!("❌ Invalid path (not UTF-8)!");
             return false;
         }
 
@@ -327,7 +538,7 @@ impl Database {
             self.meta.files.retain(|f| f.name != file.name);
 
             if let Err(e) = remove_file(&file.file_path) {
-                println!("❌ Failed to remove original file");
+                println!("❌ Failed to remove original file {}",e);
                 return false;
             }
 

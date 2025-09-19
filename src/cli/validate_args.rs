@@ -27,6 +27,30 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
         println!("{}", "──────────────────────────────".bright_black());
 
         match input_cmd {
+            "database-info" | "di" => print_usage(&[
+                "database-info",
+                "di"
+            ]),
+            "decrypt-all-files" | "decallfiles" | "decaf" => print_usage(&[
+                "decrypt-all-files",
+                "decallfiles",
+                "decaf"
+            ]),
+            "encrypt-all-files" | "encallfiles" | "encaf" => print_usage(&[
+                "encrypt-all-files",
+                "encallfiles",
+                "encaf"
+            ]),
+            "decrypt-all-passwords" | "decallpass" | "decap" => print_usage(&[
+                "decrypt-all-passwords",
+                "decallpass",
+                "decap",
+            ]),
+            "encrypt-all-passwords" | "encallpass" | "encap" => print_usage(&[
+                "encrypt-all-passwords",
+                "encallpass",
+                "encap",
+            ]),
             "cut-paste-file" | "cutpastefile" | "cpf" => print_usage(&[
                 "cut-paste-file <filename",
                 "cutpastefile <filname>",
@@ -41,8 +65,8 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
                 "chgrootpass <oldpassword> <newpassword>",
                 "crp <oldpassword> <newpassword>",
             ]),
-            "restore-all-password" | "resallpass" | "rap" => print_usage(&[
-                "restore-all-password",
+            "restore-all-passwords" | "resallpass" | "rap" => print_usage(&[
+                "restore-all-passwords",
                 "resallpass",
                 "rap",
             ]),
@@ -135,76 +159,76 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
                 "lsfiles",
                 "lf",
             ]),
-            "restore-file" | "resfile" | "rf" => print_usage(&[
-                "restore-file <name>",
-                "resfile <name>",
-                "rf <name>",
-            ]),
+            // "restore-file" | "resfile" | "rf" => print_usage(&[
+            //     "restore-file <name>",
+            //     "resfile <name>",
+            //     "rf <name>",
+            // ]),
             "delete-all-files" | "delallfiles" | "daf" => print_usage(&[
                 "delete-all-files",
                 "delallfiles",
                 "daf",
             ]),
-            "delete-file" | "delfile" | "df" => print_usage(&[
-                "delete-file <name>",
-                "delfile <name>",
-                "df <name>",
-            ]),
-            "decrypt-file" | "decfile" | "decf" => print_usage(&[
-                "decrypt-file <filename>",
-                "decfile <filename>",
-                "decf <filename>",
-            ]),
-            "encrypt-file" | "encfile" | "encf" => print_usage(&[
-                "encrypt-file <filename>",
-                "encfile <filename>",
-                "encf <filename>",
-            ]),
-            "cut-add-file" | "cutaddfile" | "caf" => print_usage(&[
-                "cut-add-file <name> <filename>",
-                "cutaddfile <name> <filename>",
-                "caf <name> <filename>",
-            ]),
-            "add-file" | "addfile" | "af" => print_usage(&[
-                "add-file <name> <filename>",
-                "addfile <name> <filename>",
-                "af <name> <filename>",
-            ]),
-            "restore-password" | "respass" | "rp" => print_usage(&[
-                "restore-password <name>",
-                "respass <name>",
-                "rp <name>",
-            ]),
+            // "delete-file" | "delfile" | "df" => print_usage(&[
+            //     "delete-file <name>",
+            //     "delfile <name>",
+            //     "df <name>",
+            // ]),
+            // "decrypt-file" | "decfile" | "decf" => print_usage(&[
+            //     "decrypt-file <filename>",
+            //     "decfile <filename>",
+            //     "decf <filename>",
+            // ]),
+            // "encrypt-file" | "encfile" | "encf" => print_usage(&[
+            //     "encrypt-file <filename>",
+            //     "encfile <filename>",
+            //     "encf <filename>",
+            // ]),
+            // "cut-add-file" | "cutaddfile" | "caf" => print_usage(&[
+            //     "cut-add-file <name> <filename>",
+            //     "cutaddfile <name> <filename>",
+            //     "caf <name> <filename>",
+            // ]),
+            // "add-file" | "addfile" | "af" => print_usage(&[
+            //     "add-file <name> <filename>",
+            //     "addfile <name> <filename>",
+            //     "af <name> <filename>",
+            // ]),
+            // "restore-password" | "respass" | "rp" => print_usage(&[
+            //     "restore-password <name>",
+            //     "respass <name>",
+            //     "rp <name>",
+            // ]),
             "delete-all-passwords" | "delallpass" | "dap" => print_usage(&[
                 "delete-all-passwords",
                 "delallpass",
                 "dap",
             ]),
-            "delete-password" | "delpass" | "dp" => print_usage(&[
-                "delete-password <name>",
-                "delpass <name>",
-                "dp <name>",
-            ]),
-            "decrypt-password" | "decpass" | "decp" => print_usage(&[
-                "decrypt-password <name>",
-                "decpass <name>",
-                "decp <name>",
-            ]),
-            "encrypt-password" | "encpass" | "encp" => print_usage(&[
-                "encrypt-password <name>",
-                "encpass <name>",
-                "encp <name>",
-            ]),
-            "change-password" | "chgpass" | "cp" => print_usage(&[
-                "change-password <name> <newpassword>",
-                "chgpass <name> <newpassword>",
-                "cp <name> <newpassword>",
-            ]),
-            "add-password" | "addpass" | "ap" => print_usage(&[
-                "add-password <name> <password>",
-                "addpass <name> <password>",
-                "ap <name> <password>",
-            ]),
+            // "delete-password" | "delpass" | "dp" => print_usage(&[
+            //     "delete-password <name>",
+            //     "delpass <name>",
+            //     "dp <name>",
+            // ]),
+            // "decrypt-password" | "decpass" | "decp" => print_usage(&[
+            //     "decrypt-password <name>",
+            //     "decpass <name>",
+            //     "decp <name>",
+            // ]),
+            // "encrypt-password" | "encpass" | "encp" => print_usage(&[
+            //     "encrypt-password <name>",
+            //     "encpass <name>",
+            //     "encp <name>",
+            // ]),
+            // "change-password" | "chgpass" | "cp" => print_usage(&[
+            //     "change-password <name> <newpassword>",
+            //     "chgpass <name> <newpassword>",
+            //     "cp <name> <newpassword>",
+            // ]),
+            // "add-password" | "addpass" | "ap" => print_usage(&[
+            //     "add-password <name> <password>",
+            //     "addpass <name> <password>",
+            //     "ap <name> <password>",
+            // ]),
             "cd" => print_usage(&["cd <path>"]),
             "ls" => print_usage(&["ls"]),
             "pwd" => print_usage(&["pwd"]),
@@ -221,7 +245,7 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
 }
 
 /// Helper to print usage aliases nicely
-fn print_usage(variants: &[&str]) {
+pub fn print_usage(variants: &[&str]) {
     for (i, v) in variants.iter().enumerate() {
         if i > 0 {
             println!("   {} {}", "or".yellow(), v.cyan());

@@ -106,7 +106,7 @@ impl Database {
             self.save_meta();
             self.save_encrypted_meta();
 
-            println!("✅ Password '{}' encrypted successfully.", name);
+            println!("🔓 Password '{}' encrypted successfully.", name);
             true
         } else {
             println!("❌ No password found with name: {}", name);
@@ -165,4 +165,176 @@ impl Database {
         }
     }
 
+    pub fn encrypt_all_passwords(&mut self) -> bool {
+        let mut success_count = 0;
+        let mut failure_count = 0;
+        let mut passwords_to_move = Vec::new();
+
+        // First, collect all the data we need without holding mutable references
+        let password_data: Vec<(usize, String, String, String)> = self.meta.passwords
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| !p.is_encrypted)
+            .map(|(i, p)| (i, p.encrypted_item_key.clone(), p.password.clone(), p.name.clone()))
+            .collect();
+
+        let total_to_process = password_data.len();
+        
+        if total_to_process == 0 {
+            println!("ℹ️  No unencrypted passwords found to encrypt.");
+            return true;
+        }
+
+        println!("🔒 Encrypting {} passwords...", total_to_process);
+
+        // Process each password with progress reporting
+        for (current, (index, encrypted_item_key, password, name)) in password_data.iter().enumerate() {
+            print!("[{}/{}] Encrypting '{}'... ", current + 1, total_to_process, name);
+
+            let key = match unwrap_item_key(encrypted_item_key, &self.master_key) {
+                Some(k) => k,
+                None => {
+                    println!("❌ (key error)");
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            match self.encrypt_string(password, &key) {
+                Some(encrypted_pass) => {
+                    passwords_to_move.push((*index, encrypted_pass, name.clone()));
+                    success_count += 1;
+                    println!("✅");
+                }
+                None => {
+                    println!("❌ (encryption failed)");
+                    failure_count += 1;
+                }
+            }
+        }
+
+        // Now update the actual entries in reverse order to avoid index shifting
+        println!("Updating database...");
+        for (index, encrypted_pass, _name) in passwords_to_move.into_iter().rev() {
+            if let Some(pass_entry) = self.meta.passwords.get_mut(index) {
+                pass_entry.password = encrypted_pass;
+                pass_entry.updated_at = time::now();
+                pass_entry.is_encrypted = true;
+
+                // Move to encrypted_meta
+                let encrypted_entry = self.meta.passwords.remove(index);
+                self.encrypted_meta.passwords.push(encrypted_entry);
+            }
+        }
+
+        // Only save if we had successful encryptions
+        if success_count > 0 {
+            self.save_meta();
+            self.save_encrypted_meta();
+        }
+
+        // Log results
+        println!("\n📊 Encryption Summary:");
+        println!("   Total:    {}", total_to_process);
+        println!("   Success:  {}", success_count);
+        println!("   Failed:   {}", failure_count);
+
+        if success_count > 0 && failure_count == 0 {
+            println!("✅ Successfully encrypted all {} passwords.", success_count);
+        } else if success_count > 0 {
+            println!("⚠️  Encrypted {}/{} passwords. {} failed.", success_count, total_to_process, failure_count);
+        } else {
+            println!("❌ Failed to encrypt any passwords. {}/{} failed.", failure_count, total_to_process);
+        }
+
+        failure_count == 0
+    }
+
+    pub fn decrypt_all_passwords(&mut self) -> bool {
+        let mut success_count = 0;
+        let mut failure_count = 0;
+        let mut i = 0;
+
+        // Collect encrypted passwords first to get count and names
+        let encrypted_passwords: Vec<(usize, String)> = self.encrypted_meta.passwords
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| p.is_encrypted)
+            .map(|(i, p)| (i, p.name.clone()))
+            .collect();
+
+        let total_to_process = encrypted_passwords.len();
+
+        if total_to_process == 0 {
+            println!("ℹ️  No encrypted passwords found to decrypt.");
+            return true;
+        }
+
+        println!("🔓 Decrypting {} passwords...", total_to_process);
+
+        let mut current = 0;
+        while i < self.encrypted_meta.passwords.len() {
+            let pass_entry = &self.encrypted_meta.passwords[i];
+
+            if !pass_entry.is_encrypted {
+                i += 1;
+                continue;
+            }
+
+            current += 1;
+            print!("[{}/{}] Decrypting '{}'... ", current, total_to_process, pass_entry.name);
+
+            let key = match unwrap_item_key(&pass_entry.encrypted_item_key, &self.master_key) {
+                Some(k) => k,
+                None => {
+                    println!("❌ (key error)");
+                    failure_count += 1;
+                    i += 1;
+                    continue;
+                }
+            };
+
+            let decrypted_password = match self.decrypt_string(&pass_entry.password, &key) {
+                Some(dp) => dp,
+                None => {
+                    println!("❌ (decryption failed)");
+                    failure_count += 1;
+                    i += 1;
+                    continue;
+                }
+            };
+
+            // Update and move to main meta
+            let mut decrypted_entry = self.encrypted_meta.passwords.remove(i);
+            decrypted_entry.password = decrypted_password;
+            decrypted_entry.updated_at = time::now();
+            decrypted_entry.is_encrypted = false;
+
+            self.meta.passwords.push(decrypted_entry);
+            success_count += 1;
+            println!("✅");
+            // Don't increment i since we removed the current element
+        }
+
+        if success_count > 0 || failure_count > 0 {
+            self.save_meta();
+            self.save_encrypted_meta();
+        }
+
+        // Log results
+        println!("\n📊 Decryption Summary:");
+        println!("   Total:    {}", total_to_process);
+        println!("   Success:  {}", success_count);
+        println!("   Failed:   {}", failure_count);
+
+        if success_count > 0 && failure_count == 0 {
+            println!("✅ Successfully decrypted all {} passwords.", success_count);
+        } else if success_count > 0 {
+            println!("⚠️  Decrypted {}/{} passwords. {} failed.", success_count, total_to_process, failure_count);
+        } else {
+            println!("❌ Failed to decrypt any passwords. {}/{} failed.", failure_count, total_to_process);
+        }
+
+        failure_count == 0
+    }
 }

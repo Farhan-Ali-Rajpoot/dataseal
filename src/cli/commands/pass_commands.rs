@@ -1,72 +1,134 @@
 use crate::db::{Database,PasswordEntry};
 use colored::*;
 
+
+
+
+pub fn decrypt_all_passwords(db: &mut Database) -> bool {
+    db.decrypt_all_passwords()
+}
+
+pub fn encrypt_all_passwords(db: &mut Database) -> bool {
+    db.encrypt_all_passwords()
+}
+
 pub fn restore_all_passwords(db: &mut Database) -> bool {
     db.restore_all_passwords()
 }
 
 pub fn add_password(db: &mut Database, parts: &[&str]) -> bool {
+    // Skip the command and get the rest
+    let args = &parts[1..];
 
-    let name = parts[1];
-    let password = parts[2];
-
-    if db.add_password(name, password) {
-        true
-    } else {
-        false
+    if args.len() % 2 != 0 {
+        eprintln!("❌ Mismatched arguments: you must provide name/password pairs.");
+        return false;
     }
+
+    let mut all_ok = true;
+    for pair in args.chunks(2) {
+        let name = pair[0];
+        let password = pair[1];
+
+        let ok = db.add_password(name, password);
+        if !ok {
+            eprintln!("Failed to add password for: {}", name);
+            all_ok = false;
+        }
+    }
+
+    all_ok
 }
+
 
 pub fn change_password(db: &mut Database, parts: &[&str]) -> bool {
-    let name = parts[1];
-    let new_password = parts[2];
-    if db.change_password(name, new_password) {
-        true
-    }else {
-        false
+    let args = &parts[1..];
+
+    if args.len() % 2 != 0 {
+        eprintln!("❌ Mismatched arguments: you must provide name/new_password pairs.");
+        return false;
     }
+
+    let mut all_ok = true;
+    for pair in args.chunks(2) {
+        let name = pair[0];
+        let new_password = pair[1];
+
+        let ok = db.change_password(name, new_password);
+        if !ok {
+            eprintln!("Failed to change password for: {}", name);
+            all_ok = false;
+        }
+    }
+
+    all_ok
 }
 
+
 pub fn encrypt_password(db: &mut Database, parts: &[&str]) -> bool {
-    let name = parts[1];
-    if db.encrypt_password(name) {
-        true
-    }else {
-        false
+    let names = &parts[1..];
+
+    let mut all_ok = true;
+    for name in names {
+        let ok = db.encrypt_password(name);
+        if !ok {
+            eprintln!("Failed to restore password for: {}", name);
+            all_ok = false;
+        }
     }
+
+    all_ok
 }
 
 pub fn decrypt_password(db: &mut Database, parts: &[&str]) -> bool {
-    let name = parts[1];
-    if db.decrypt_password(name) {
-        true
-    }else {
-        false
+    let names = &parts[1..];
+
+    let mut all_ok = true;
+    for name in names {
+        let ok = db.decrypt_password(name);
+        if !ok {
+            eprintln!("Failed to restore password for: {}", name);
+            all_ok = false;
+        }
     }
+
+    all_ok
 }
 
 pub fn delete_password(db: &mut Database, parts: &[&str]) -> bool {
-    let name = parts[1];
+    let names = &parts[1..];
 
-    if db.delete_password(name) {
-        true
-    }else {
-        false
+    let mut all_ok = true;
+    for name in names {
+        let ok = db.delete_password(name);
+        if !ok {
+            eprintln!("Failed to restore password for: {}", name);
+            all_ok = false;
+        }
     }
+
+    all_ok
 }
 
 pub fn delete_all_passwords(db: &mut Database) -> bool {
-    if db.delete_all_passwords() {
-        true
-    }else {
-        false
-    }
+    db.delete_all_passwords()
 }
 
 pub fn restore_password(db: &mut Database, parts: &[&str]) -> bool {
-    let name = parts[1];
-    db.restore_password(name) 
+    let names = &parts[1..];
+
+    let mut all_ok = true;
+    for name in names {
+        let ok = db.restore_password(name);
+        if !ok {
+            eprintln!("Failed to restore password for: {}", name);
+            all_ok = false;
+        }
+    }
+
+    all_ok
 }
+
 
 pub fn list_decrypted_passwords(db: &mut Database) -> bool {
     let passwords = db.list_decrypted_passwords(Some("active"));

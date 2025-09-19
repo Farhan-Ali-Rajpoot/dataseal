@@ -1,13 +1,14 @@
 use super::Database;
 // Standard Modules
 use std::path::Path;
-use std::{fs, fs::{ remove_file }};
+use std::{fs::{ remove_file }};
 // Crate
 use crate::db::{FileEntry};
 
 
 
 impl Database {
+
     pub fn delete_file(&mut self, name: &str) -> bool {
         // Find the file entry in meta
         let entry_index = match self.meta.files.iter().position(|f| f.name == name) {

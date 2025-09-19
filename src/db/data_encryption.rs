@@ -7,7 +7,7 @@ use std::{
 use aes_gcm_siv::{Aes256GcmSiv, Key, Nonce};
 use aes_gcm_siv::aead::{Aead, KeyInit};
 use base64::{engine::general_purpose, Engine as _};
-use rand::{RngCore, thread_rng};
+use rand::{RngCore, rng};
 
 impl Database {
     /// Encrypt a string and return Base64 using AES-256-GCM-SIV
@@ -15,7 +15,7 @@ impl Database {
         let cipher = Aes256GcmSiv::new(Key::<Aes256GcmSiv>::from_slice(key));
 
         let mut nonce_bytes = [0u8; 12];
-        thread_rng().fill_bytes(&mut nonce_bytes);
+        rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).ok()?;
@@ -55,7 +55,7 @@ impl Database {
             let chunk = &buffer[..n];
 
             let mut nonce_bytes = [0u8; 12];
-            thread_rng().fill_bytes(&mut nonce_bytes);
+            rng().fill_bytes(&mut nonce_bytes);
             let nonce = Nonce::from_slice(&nonce_bytes);
 
             let encrypted_chunk = cipher.encrypt(nonce, chunk).unwrap();

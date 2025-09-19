@@ -1,10 +1,8 @@
 use aes_gcm_siv::{Aes256GcmSiv, Key, Nonce}; // AEAD
 use aes_gcm_siv::aead::{Aead, KeyInit};
 use rand::{RngCore, rngs::ThreadRng};
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Write, stdout};
 
-use base64::{engine::general_purpose, Engine as _};
+use base64::{engine::general_purpose,};
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
 // use base64::Engine; // Needed to call encode/decode
