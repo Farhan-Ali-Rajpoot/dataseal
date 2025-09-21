@@ -1,6 +1,6 @@
 use crate::db::{Database,PasswordEntry};
 use colored::*;
-
+use terminal_size::{Width, terminal_size};
 
 
 
@@ -186,7 +186,6 @@ pub fn search_all_passwords(db: &mut Database, parts: &[&str]) -> bool {
 }
 
 // Helper functions
-/// Print a list of passwords in a pretty, aligned table.
 pub fn print_passwords_pretty(passwords: &[&PasswordEntry]) {
     if passwords.is_empty() {
         println!("{}", "No passwords found.".yellow());
@@ -195,32 +194,57 @@ pub fn print_passwords_pretty(passwords: &[&PasswordEntry]) {
 
     println!(); // blank line on top
 
-    // Calculate column widths based on header and content
+    // Get terminal width
+    let term_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 100, // fallback width
+    };
+
+    // Base column widths with minimums
     let mut name_width = 25;
     let mut password_width = 20;
-    let mut encrypted_width = 12;
-    let mut recycled_width = 10;
+    let encrypted_width = 10; // Fixed for "Encrypted"/"Yes"/"No"
+    let recycled_width = 10;  // Fixed for "Deleted"/"Yes"/"No"
     let mut created_width = 22;
     let mut updated_width = 22;
 
     // Find maximum content lengths
     for p in passwords {
-        name_width = name_width.max(p.name.len());
-        // For encrypted passwords, we'll show "********", so width is 8
-        password_width = password_width.max(if p.is_encrypted { 8 } else { p.password.len() });
-        encrypted_width = encrypted_width.max(3); // "Yes"/"No"
-        recycled_width = recycled_width.max(3); // "Yes"/"No"
-        created_width = created_width.max(p.created_at.len());
-        updated_width = updated_width.max(p.updated_at.len());
+        name_width = name_width.max(p.name.len() + 2);
+        // For encrypted passwords, we only need space for "********"
+        password_width = password_width.max(if p.is_encrypted { 
+            8 
+        } else { 
+            p.password.len() + 2 
+        });
+        created_width = created_width.max(p.created_at.len() + 2);
+        updated_width = updated_width.max(p.updated_at.len() + 2);
     }
 
-    // Add some padding and ensure minimum widths
-    name_width = (name_width + 2).max(10);
-    password_width = (password_width + 2).max(15);
-    encrypted_width = (encrypted_width + 2).max(12);
-    recycled_width = (recycled_width + 2).max(10);
-    created_width = (created_width + 2).max(15);
-    updated_width = (updated_width + 2).max(15);
+    // Apply minimum widths
+    name_width = name_width.max(10);
+    password_width = password_width.max(15);
+    created_width = created_width.max(15);
+    updated_width = updated_width.max(15);
+
+    // Calculate total width
+    let total_width = name_width + password_width + encrypted_width + recycled_width + created_width + updated_width + 5;
+
+    // If total width exceeds terminal, scale proportionally but preserve fixed columns
+    if total_width > term_width {
+        // Calculate available width for variable columns (excluding fixed ones)
+        let fixed_columns_width = encrypted_width + recycled_width + 5;
+        let available_width = term_width - fixed_columns_width;
+        
+        // Distribute available width proportionally to variable columns
+        let variable_columns_total = name_width + password_width + created_width + updated_width;
+        let scale = available_width as f64 / variable_columns_total as f64;
+        
+        name_width = (name_width as f64 * scale).max(10.0) as usize;
+        password_width = (password_width as f64 * scale).max(8.0) as usize; // Min 8 for "********"
+        created_width = (created_width as f64 * scale).max(12.0) as usize;
+        updated_width = (updated_width as f64 * scale).max(12.0) as usize;
+    }
 
     // Header
     println!(
@@ -239,9 +263,8 @@ pub fn print_passwords_pretty(passwords: &[&PasswordEntry]) {
         updated_width = updated_width
     );
 
-    // Separator line (calculate total width)
-    let total_width = name_width + password_width + encrypted_width + recycled_width + created_width + updated_width + 5;
-    println!("{}", "-".repeat(total_width).blue());
+    // Separator
+    println!("{}", "-".repeat(term_width.min(total_width)).blue());
 
     // Rows
     for p in passwords {
@@ -257,30 +280,52 @@ pub fn print_passwords_pretty(passwords: &[&PasswordEntry]) {
             "No".bright_green() 
         };
 
-        // Show asterisks for encrypted passwords, actual password for plain text
+        // Handle password display with truncation for long passwords
         let password_display = if p.is_encrypted {
             "********".to_string()
-        } else if p.password.len() > password_width - 2 {
-            format!("{}...", &p.password[..password_width.saturating_sub(5)])
         } else {
-            p.password.clone()
+            // Truncate long passwords with ellipsis
+            if p.password.len() > password_width {
+                format!("{}...", &p.password[..password_width.saturating_sub(3)])
+            } else {
+                p.password.clone()
+            }
         };
 
-        // Apply color to password based on encryption status
         let password_colored = if p.is_encrypted {
-            password_display.yellow() // Encrypted passwords in yellow (asterisks)
+            password_display.yellow()
         } else {
-            password_display.bright_red() // Plain text passwords in red (warning)
+            password_display.bright_red()
+        };
+
+        // Handle name truncation for long names
+        let name_display = if p.name.len() > name_width {
+            format!("{}...", &p.name[..name_width.saturating_sub(3)])
+        } else {
+            p.name.clone()
+        };
+
+        // Handle date truncation if needed
+        let created_display = if p.created_at.len() > created_width {
+            format!("{}...", &p.created_at[..created_width.saturating_sub(3)])
+        } else {
+            p.created_at.clone()
+        };
+
+        let updated_display = if p.updated_at.len() > updated_width {
+            format!("{}...", &p.updated_at[..updated_width.saturating_sub(3)])
+        } else {
+            p.updated_at.clone()
         };
 
         println!(
             "{:<name_width$} {:<password_width$} {:<encrypted_width$} {:<recycled_width$} {:<created_width$} {:<updated_width$}",
-            p.name.bright_cyan(),
+            name_display.bright_cyan(),
             password_colored,
             encrypted_str,
             recycled_str,
-            p.created_at.dimmed(),
-            p.updated_at.dimmed(),
+            created_display.dimmed(),
+            updated_display.dimmed(),
             name_width = name_width,
             password_width = password_width,
             encrypted_width = encrypted_width,

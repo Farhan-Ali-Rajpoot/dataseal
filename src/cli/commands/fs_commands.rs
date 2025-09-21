@@ -1,6 +1,9 @@
 use std::io::{stdout, Write};
 use std::{env, fs};
 use std::process::Command;
+use terminal_size::{Width, terminal_size}; // to get terminal width
+
+
 use colored::*;
 
 pub fn cd(path: &str) -> bool {
@@ -19,30 +22,54 @@ pub fn cd(path: &str) -> bool {
     }
 }
 
-pub fn ls() -> String {
-    match fs::read_dir(".") {
-        Ok(entries) => {
-            let mut result = String::new();
-            for entry in entries.flatten() {
-                let path = entry.path();
-                let name = entry.file_name().to_string_lossy().to_string();
+pub fn lsa() {
+    // Collect entries
+    let mut entries = Vec::new();
+    if let Ok(read_dir) = fs::read_dir(".") {
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().to_string();
 
-                let colored_name = if path.is_dir() {
-                    name.blue() // directories
-                } else if path.is_file() {
-                    name.bright_green() // files
-                } else {
-                    name.white() // other types (symlinks, etc.)
-                };
-
-                result.push_str(&format!("{}  ", colored_name));
-            }
-            result.trim_end().to_string()
+            // Color coding like bash
+            let colored_name = if path.is_dir() {
+                name.blue()
+            } else if path.is_file() {
+                name.green()
+            } else {
+                name.white()
+            };
+            entries.push(colored_name);
         }
-        Err(e) => format!("Error: could not read directory: {}", e),
     }
+
+    print_in_columns(&entries);
 }
 
+pub fn ls() {
+    // Like lsa but skip hidden files/folders
+    let mut entries = Vec::new();
+    if let Ok(read_dir) = fs::read_dir(".") {
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().to_string();
+
+            if name.starts_with('.') {
+                continue;
+            }
+
+            let colored_name = if path.is_dir() {
+                name.blue()
+            } else if path.is_file() {
+                name.green()
+            } else {
+                name.white()
+            };
+            entries.push(colored_name);
+        }
+    }
+
+    print_in_columns(&entries);
+}
 
 pub fn pwd() -> String {
     match env::current_dir() {
@@ -50,7 +77,6 @@ pub fn pwd() -> String {
         Err(e) => format!("Error getting current directory: {}", e),
     }
 }
-
 
 pub fn clear() {
     if cfg!(target_os = "windows") {
@@ -66,4 +92,27 @@ pub fn clear() {
         // \x1B[H  -> move cursor to top-left
         stdout().flush().unwrap();
     }
+}
+
+// Helper function to print vector of strings in terminal-style columns
+fn print_in_columns(entries: &[colored::ColoredString]) {
+    if entries.is_empty() {
+        return;
+    }
+
+    let term_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 80, // default width if unknown
+    };
+
+    let max_len = entries.iter().map(|s| s.len()).max().unwrap_or(0) + 2; // +2 for spacing
+    let cols = term_width / max_len.max(1);
+
+    for (i, entry) in entries.iter().enumerate() {
+        print!("{:width$}", entry, width = max_len);
+        if (i + 1) % cols == 0 {
+            println!();
+        }
+    }
+    println!();
 }

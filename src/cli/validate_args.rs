@@ -231,6 +231,7 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
             // ]),
             "cd" => print_usage(&["cd <path>"]),
             "ls" => print_usage(&["ls"]),
+            "lsa" => print_usage(&["lsa"]),
             "pwd" => print_usage(&["pwd"]),
             "help" => print_usage(&["help"]),
             "clear" => print_usage(&["clear"]),

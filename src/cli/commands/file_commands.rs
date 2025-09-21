@@ -2,6 +2,8 @@ use super::utils::{run_in_dir};
 use std::path::{Path, PathBuf};
 use colored::*;
 use crate::db::{Database, FileEntry};
+use terminal_size::{Width, terminal_size};
+
 
 
 pub fn decrypt_all_files(db: &mut Database, initial_dir: &Path) -> bool {
@@ -101,7 +103,6 @@ pub fn add_file(
     all_ok
 }
 
-
 pub fn cut_add_file(
     db: &mut Database,
     parts: &[&str],
@@ -150,8 +151,6 @@ pub fn cut_add_file(
 
     all_ok
 }
-
-
 
 pub fn encrypt_file(db: &mut Database, parts: &[&str], initial_dir: &Path) -> bool {
     let filenames = &parts[1..];
@@ -279,36 +278,51 @@ pub fn print_files_pretty(files: &[&FileEntry]) {
 
     println!(); // blank line on top
 
-    // Calculate column widths based on header and content
-    let mut name_width = 25;
-    let mut ext_width = 10;
-    let mut size_width = 12;
-    let mut encrypted_width = 12;
-    let mut recycled_width = 10;
-    let mut created_width = 22;
-    let mut updated_width = 22;
+    // Get terminal width (fallback to 100 if unknown)
+    let term_width = match terminal_size() {
+        Some((Width(w), _)) => w as usize,
+        None => 100,
+    };
 
-    // Find maximum content lengths
+    // Calculate minimum required widths based on content
+    let mut name_width = 25;
+    let mut ext_width = 8;
+    let mut size_width = 10;
+    let encrypted_width = 10; // Fixed width for "Encrypted"/"Yes"/"No"
+    let recycled_width = 10;  // Fixed width for "Deleted"/"Yes"/"No"
+    let mut created_width = 20;
+    let mut updated_width = 20;
+
+    // Adjust widths according to content
     for f in files {
-        name_width = name_width.max(f.name.len());
-        ext_width = ext_width.max(f.extension.len());
-        size_width = size_width.max(f.size.len() + 3); // +3 for decimal places
-        encrypted_width = encrypted_width.max(3); // "Yes"/"No"
-        recycled_width = recycled_width.max(3); // "Yes"/"No"
-        created_width = created_width.max(f.created_at.len());
-        updated_width = updated_width.max(f.updated_at.len());
+        name_width = name_width.max(f.name.len() + 2);
+        ext_width = ext_width.max(f.extension.len() + 2);
+        size_width = size_width.max(f.size.len() + 2);
+        created_width = created_width.max(f.created_at.len() + 2);
+        updated_width = updated_width.max(f.updated_at.len() + 2);
     }
 
-    // Add some padding and ensure minimum widths
-    name_width = (name_width + 2).max(10);
-    ext_width = (ext_width + 2).max(8);
-    size_width = (size_width + 2).max(12);
-    encrypted_width = (encrypted_width + 2).max(12);
-    recycled_width = (recycled_width + 2).max(10);
-    created_width = (created_width + 2).max(15);
-    updated_width = (updated_width + 2).max(15);
+    // Compute total width
+    let total_width = name_width + ext_width + size_width + encrypted_width + recycled_width + created_width + updated_width + 6;
 
-    // Header - Reordered to match password layout: Name, Ext, Size, Encrypted, Deleted, Created, Updated
+    // If total width exceeds terminal, scale proportionally but preserve name column
+    if total_width > term_width {
+        // Calculate available width for variable columns (excluding fixed ones)
+        let fixed_columns_width = encrypted_width + recycled_width + 6;
+        let available_width = term_width - fixed_columns_width;
+        
+        // Distribute available width proportionally to variable columns
+        let variable_columns_total = name_width + ext_width + size_width + created_width + updated_width;
+        let scale = available_width as f64 / variable_columns_total as f64;
+        
+        name_width = (name_width as f64 * scale).max(10.0) as usize; // Minimum 10 chars for name
+        ext_width = (ext_width as f64 * scale).max(4.0) as usize;
+        size_width = (size_width as f64 * scale).max(8.0) as usize;
+        created_width = (created_width as f64 * scale).max(12.0) as usize;
+        updated_width = (updated_width as f64 * scale).max(12.0) as usize;
+    }
+
+    // Header
     println!(
         "{:<name_width$} {:<ext_width$} {:<size_width$} {:<encrypted_width$} {:<recycled_width$} {:<created_width$} {:<updated_width$}",
         "Name".bright_yellow(),
@@ -327,40 +341,62 @@ pub fn print_files_pretty(files: &[&FileEntry]) {
         updated_width = updated_width
     );
 
-    // Separator line (calculate total width)
-    let total_width = name_width + ext_width + size_width + encrypted_width + recycled_width + created_width + updated_width + 6;
-    println!("{}", "-".repeat(total_width).blue());
+    println!("{}", "-".repeat(term_width.min(total_width)).blue());
 
-    // Rows
+    // Rows - handle long names with truncation and ellipsis
     for f in files {
-        let encrypted_str = if f.is_encrypted { 
-            "Yes".bright_green().bold() // Encrypted = green
-        } else { 
-            "No".red() // Not encrypted = red (warning)
+        let encrypted_str = if f.is_encrypted {
+            "Yes".bright_green().bold()
+        } else {
+            "No".red()
         };
-        
-        let recycled_str = if f.is_recycled { 
-            "Yes".red().bold() // Deleted = red
-        } else { 
-            "No".bright_green() // Not deleted = green
+        let recycled_str = if f.is_recycled {
+            "Yes".red().bold()
+        } else {
+            "No".bright_green()
         };
 
-        // Format size nicely - handle parsing errors gracefully
         let size: Result<f64, _> = f.size.parse();
         let size_display = match size {
             Ok(val) => format!("{:.6}", val),
             Err(_) => "N/A".to_string(),
         };
 
+        // Truncate long names with ellipsis
+        let name_display = if f.name.len() > name_width {
+            format!("{}...", &f.name[..name_width.saturating_sub(3)])
+        } else {
+            f.name.clone()
+        };
+
+        // Truncate other long fields if needed
+        let ext_display = if f.extension.len() > ext_width {
+            format!("{}...", &f.extension[..ext_width.saturating_sub(3)])
+        } else {
+            f.extension.clone()
+        };
+
+        let created_display = if f.created_at.len() > created_width {
+            format!("{}...", &f.created_at[..created_width.saturating_sub(3)])
+        } else {
+            f.created_at.clone()
+        };
+
+        let updated_display = if f.updated_at.len() > updated_width {
+            format!("{}...", &f.updated_at[..updated_width.saturating_sub(3)])
+        } else {
+            f.updated_at.clone()
+        };
+
         println!(
             "{:<name_width$} {:<ext_width$} {:<size_width$} {:<encrypted_width$} {:<recycled_width$} {:<created_width$} {:<updated_width$}",
-            f.name.bright_cyan(),
-            f.extension.normal(),
+            name_display.bright_cyan(),
+            ext_display.normal(),
             size_display,
             encrypted_str,
             recycled_str,
-            f.created_at.dimmed(),
-            f.updated_at.dimmed(),
+            created_display.dimmed(),
+            updated_display.dimmed(),
             name_width = name_width,
             ext_width = ext_width,
             size_width = size_width,

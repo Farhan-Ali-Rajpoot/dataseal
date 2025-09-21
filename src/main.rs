@@ -1,4 +1,6 @@
 use clap::Parser;
+use rpassword::read_password; // ✅ add rpassword crate in Cargo.toml
+use std::io::{self, Write};
 
 pub mod db;
 pub mod cli;
@@ -10,18 +12,13 @@ use crate::cli::help_document::{help_document};
 #[command(
     name = "DataSeal",
     about = "A simple database app with CLI and GUI modes",
-    version = env!("CARGO_PKG_VERSION")  // ✅ adds built-in -V/--version
+    version = env!("CARGO_PKG_VERSION")  
 )]
 struct Args {
     /// Launch GUI version (default is CLI)
     #[arg(long)]
     gui: bool,
-
-    /// Master password for CLI mode.
-    #[arg(short, long)]
-    password: Option<String>,
 }
-
 
 fn main() {
     let mut args_raw = std::env::args();
@@ -34,11 +31,10 @@ fn main() {
         },
         Some("help") | Some("--help") | Some("-h") => {
             println!("{}", help_document());
+            return;
         },
         _ => {}
     }
-
-
 
     let args = Args::parse();
 
@@ -47,15 +43,17 @@ fn main() {
         return;
     }
 
-    let master_password = match args.password {
-        Some(p) => p,
-        None => {
-            eprintln!("❌ Please provide a master password with --password or -p");
+    // ✅ Prompt user for master password interactively
+    println!("Enter master password:");
+    io::stdout().flush().unwrap();
+    let master_password = match read_password() {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("❌ Failed to read password: {}", e);
             return;
         }
     };
 
     println!("🚀 Launching DataSeal CLI...");
     cli::repl::start(&master_password);
-    // call your CLI logic here
 }

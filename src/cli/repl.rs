@@ -307,7 +307,12 @@ pub fn start(master_password: &str) {
                 },
                 "ls" => {
                     if validate_args(&["ls"], &parts, 0) {
-                        println!("{}", fs_commands::ls());
+                        fs_commands::ls();
+                    }
+                },
+                "lsa" => {
+                    if validate_args(&["lsa"], &parts, 0) {
+                        fs_commands::lsa();
                     }
                 },
                 "pwd" => {

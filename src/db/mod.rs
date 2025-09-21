@@ -157,21 +157,43 @@ impl Database {
     }
 }
 
-// Improved helper function that works with PathBuf
 fn is_system_path(path: &Path) -> bool {
     let path_str = path.to_string_lossy().to_lowercase();
-    
-    // Linux global install paths
-    path_str.contains("/usr/local/bin") ||
-    path_str.contains("/usr/bin") ||
-    path_str.contains("/bin") ||
-    path_str.contains("/sbin") ||
-    // Windows global system paths
+
+    // -----------------
+    // Linux / Unix
+    // -----------------
+    path_str.starts_with("/bin") ||
+    path_str.starts_with("/sbin") ||
+    path_str.starts_with("/lib") ||
+    path_str.starts_with("/lib64") ||
+    path_str.starts_with("/usr") ||     // /usr, /usr/bin, /usr/local, /usr/share...
+    path_str.starts_with("/etc") ||
+    path_str.starts_with("/var") ||
+    path_str.starts_with("/opt") ||
+    path_str.starts_with("/snap") ||
+
+    // -----------------
+    // Windows
+    // -----------------
     path_str.contains("\\windows\\system32") ||
+    path_str.contains("\\windows") ||
     path_str.contains("\\program files") ||
     path_str.contains("\\program files (x86)") ||
-    // macOS system paths
-    path_str.contains("/applications") ||
-    path_str.contains("/usr/local") ||
-    path_str.contains("/usr/bin")
+    path_str.contains("\\programdata") ||
+    path_str.contains("\\appdata\\local\\programs") || // e.g. VSCode install dir
+    path_str.contains("\\users\\default") ||           // default profile
+    path_str.contains("\\users\\public") ||
+
+    // -----------------
+    // macOS
+    // -----------------
+    path_str.starts_with("/applications") ||
+    path_str.starts_with("/system") ||
+    path_str.starts_with("/library") ||
+    path_str.starts_with("/usr") ||        // /usr/bin, /usr/local
+    path_str.starts_with("/bin") ||
+    path_str.starts_with("/sbin") ||
+    path_str.starts_with("/opt") ||
+    path_str.starts_with("/var")
 }

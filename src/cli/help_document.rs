@@ -23,6 +23,7 @@ SYSTEM COMMANDS:
 PATH COMMANDS:
     pwd                       Print current working directory
     ls                        List files and folders in current directory
+    lsa                        List all files and folders in current directory
     cd <dir>                  Change current directory
 
 FILE COMMANDS:
