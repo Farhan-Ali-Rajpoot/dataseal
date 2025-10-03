@@ -1,10 +1,16 @@
-use std::io::{stdout, Write};
-use std::{env, fs};
-use std::process::Command;
-use terminal_size::{Width, terminal_size}; // to get terminal width
+
+use super::{
+    std::{
+        io::{stdout, Write},
+        env,
+        fs,
+        process::Command
+    },
+    terminal_size::{Width, terminal_size},
+    colored::*,
+};
 
 
-use colored::*;
 
 pub fn cd(path: &str) -> bool {
     if let Err(e) = env::set_current_dir(path) {

@@ -1,8 +1,10 @@
-use super::utils::{run_in_dir};
-use std::path::{Path, PathBuf};
-use colored::*;
-use crate::db::{Database, FileEntry};
-use terminal_size::{Width, terminal_size};
+use super::{
+    utils::run_in_dir,
+    structs::{Database, FileEntry},
+    colored::*,
+    std::path::{Path, PathBuf},
+    terminal_size::{Width, terminal_size}
+};
 
 
 
@@ -41,7 +43,7 @@ pub fn restore_all_files(db: &mut Database) -> bool {
 }
 
 pub fn empty_recycle_bin_verbose(db: &mut Database) -> bool {
-    let (deleted_passwords, deleted_files) = db.empty_recycle_bin();
+    let (deleted_passwords, deleted_files, deleted_folders) = db.empty_recycle_bin();
 
     if deleted_passwords == 0 && deleted_files == 0 {
         println!("🗑️ Recycle bin is already empty.");
@@ -49,6 +51,7 @@ pub fn empty_recycle_bin_verbose(db: &mut Database) -> bool {
         println!("🗑️ Recycle Bin Emptied!");
         println!("Deleted passwords: {}", deleted_passwords);
         println!("Deleted files: {}", deleted_files);
+        println!("Deleted Folders: {}", deleted_folders)
     }
 
     true

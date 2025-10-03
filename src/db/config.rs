@@ -1,25 +1,31 @@
-use serde::{Serialize, Deserialize};
-use serde_json;
-use std::fs;
-use std::path::Path;
+use super::{
+    time,
+    structs::{ DatabaseStats, DatabaseArguments, Config, DBInfo },
+    serde_json,
+    std::{ fs, path::Path },
+    rand::{ rngs::ThreadRng, RngCore },
+    aes_gcm_siv::{
+        Aes256GcmSiv, Key, Nonce,
+        aead::{Aead, KeyInit}
+    },
+    pbkdf2::pbkdf2_hmac,
+    sha2::Sha256,
+    base64::{ engine::general_purpose, Engine as _ }
+};
 
-use rand::rngs::ThreadRng;
-use rand::RngCore;
 
-use aes_gcm_siv::{Aes256GcmSiv, Key, Nonce}; // AEAD
-use aes_gcm_siv::aead::{Aead, KeyInit};
 
-use pbkdf2::pbkdf2_hmac;
-use sha2::Sha256;
-use base64::{engine::general_purpose, Engine as _};
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
-    pub db_version: String,
-    pub kdf_salt_b64: String,
-    pub verifier_b64: String,
-    pub max_file_size_mb: u64,
-    pub path: Option<String>,
+impl DBInfo {
+    pub fn default() -> Self {
+        Self {
+            name: "".to_string(),
+            created_at: "".to_string(),
+            last_login: "".to_string(),
+            owner: "".to_string(),
+            description: "".to_string(),
+            stats: DatabaseStats::default()
+        }
+    }
 }
 
 impl Config {
@@ -33,11 +39,13 @@ impl Config {
     /// Default configuration
     pub fn default() -> Self {
         Self {
-            db_version: "1.0.0".to_string(),
+            db_version: "0.1.0".to_string(),
             kdf_salt_b64: Self::generate_salt(),
             verifier_b64: "".to_string(),
             max_file_size_mb: 100,
-            path: None,
+            file_path: None,
+            is_nested: false,
+            db_info: DBInfo::default(),
         }
     }
 
@@ -88,7 +96,24 @@ impl Config {
         }
     }
 
-    // Change password
+    // Change password - PURE VERSION (no disk writes)
+    pub fn change_master_password_pure(&self, old_password: &str, new_password: &str) -> Option<([u8; 32], Self)> {
+        // Step 1: Check old password
+        if !self.check_verifier(old_password) {
+            return None;
+        }
+
+        // Step 2: Generate new verifier with new password
+        let (new_verifier, master_key) = self.encrypt_verifier(new_password);
+        
+        // Create a new config with the updated verifier (no disk writes)
+        let mut new_config = self.clone();
+        new_config.verifier_b64 = new_verifier;
+
+        Some((master_key, new_config))
+    }
+
+    // Original version - only for final application
     pub fn change_master_password(&mut self, old_password: &str, new_password: &str) -> Option<[u8; 32]> {
         // Step 1: Check old password
         if !self.check_verifier(old_password) {
@@ -99,8 +124,8 @@ impl Config {
         let (new_verifier, master_key) = self.encrypt_verifier(new_password);
         self.verifier_b64 = new_verifier;
 
-
-        if let Some(path) = &self.path {
+        // Save to disk (this should only happen in the final apply step)
+        if let Some(path) = &self.file_path {
             let _ = fs::write(path, serde_json::to_string_pretty(&self).unwrap())
                 .map_err(|e| format!("Failed to write updated config: {e}"));
             Some(master_key)
@@ -110,31 +135,96 @@ impl Config {
     }
 
     /// Load existing config or create new one; verify master password
-    pub fn load_or_create(path: &str, master_password: &str) -> Result<Self, String> {
-        if !Path::new(path).exists() {
-            // Create new config
-            if let Some(parent) = Path::new(path).parent() {
-                fs::create_dir_all(parent).map_err(|e| format!("Failed to create parent directory: {e}"))?;
+    pub fn load_or_create(
+        args: &DatabaseArguments,
+        path: &str,
+    ) -> Result<Self, String> {
+        let path_ref = Path::new(path);
+
+        // If file does not exist OR exists but is empty → create new config
+        let should_create = !path_ref.exists()
+            || fs::metadata(path_ref)
+                .map(|m| m.len() == 0)
+                .unwrap_or(true);
+
+        if should_create {
+            if let Some(parent) = path_ref.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("Failed to create parent directory: {e}"))?;
             }
+
             let mut cfg = Self::default();
-            let (verifier_b64, _) = cfg.encrypt_verifier(master_password);
+            cfg.is_nested = args.is_nested;
+
+            let (verifier_b64, _) = cfg.encrypt_verifier(&args.master_password);
             cfg.verifier_b64 = verifier_b64;
-            cfg.path = Some(path.to_string());
-            fs::write(path, serde_json::to_string_pretty(&cfg).unwrap())
+            cfg.file_path = Some(path.to_string());
+            cfg.db_info.name = args.db_name.clone();
+            cfg.db_info.owner = args.owner.clone();
+            cfg.db_info.description = args.description.clone();
+            cfg.db_info.created_at = time::now();
+            cfg.db_info.last_login = time::now();
+
+            fs::write(path_ref, serde_json::to_string_pretty(&cfg).unwrap())
                 .map_err(|e| format!("Failed to write config: {e}"))?;
-            println!("Singned up!");
+
             Ok(cfg)
         } else {
             // Load existing config
-            let data = fs::read_to_string(path)
+            let data = fs::read_to_string(path_ref)
                 .map_err(|e| format!("Failed to read config: {e}"))?;
-            let cfg: Self = serde_json::from_str(&data)
+
+            // Extra guard: if file accidentally contains only whitespace → recreate
+            if data.trim().is_empty() {
+                return Self::load_or_create(args, path);
+            }
+
+            let mut cfg: Self = serde_json::from_str(&data)
                 .map_err(|e| format!("Failed to parse config: {e}"))?;
-            if cfg.check_verifier(master_password) {
+
+            cfg.file_path = Some(path.to_string());
+            cfg.db_info.last_login = time::now();
+
+            if cfg.check_verifier(&args.master_password) {
                 Ok(cfg)
             } else {
                 Err("❌ Wrong master password! Exiting...".to_string())
             }
         }
     }
+
+    pub fn save(&self) -> bool {
+        let path = match self.file_path.as_ref() {
+            Some(p) => p,
+            None => {
+                eprintln!("Config file path is not set.");
+                return false;
+            }
+        };
+
+        // Ensure the directory exists
+        if let Some(parent) = Path::new(path).parent() {
+            if let Err(e) = fs::create_dir_all(parent) {
+                eprintln!("Failed to create config directory: {}", e);
+                return false;
+            }
+        }
+
+        let serialized = match serde_json::to_string_pretty(&self) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Failed to serialize config: {}", e);
+                return false;
+            }
+        };
+
+        if let Err(e) = fs::write(path, serialized) {
+            eprintln!("Failed to write config to file: {}", e);
+            return false;
+        }
+
+        true
+    }
+
+
 }

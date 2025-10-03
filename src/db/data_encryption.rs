@@ -1,13 +1,17 @@
-use super::Database;
-use std::{
-    fs::File,
-    io::{BufReader, BufWriter, Read, Write, stdout},
+use super::{
+    structs::{Database},
+    std::{
+        fs::File,
+        io::{BufReader, BufWriter, Read, Write, stdout},
+    },
+    aes_gcm_siv::{
+        Aes256GcmSiv, Key, Nonce,
+        aead::{Aead, KeyInit}
+    },
+    base64::{engine::general_purpose, Engine as _},
+    rand::{RngCore, rng},
 };
 
-use aes_gcm_siv::{Aes256GcmSiv, Key, Nonce};
-use aes_gcm_siv::aead::{Aead, KeyInit};
-use base64::{engine::general_purpose, Engine as _};
-use rand::{RngCore, rng};
 
 impl Database {
     /// Encrypt a string and return Base64 using AES-256-GCM-SIV

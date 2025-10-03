@@ -1,4 +1,6 @@
-use crate::db::{Database};
+use super::{
+    structs::Database,
+};
 
 
 

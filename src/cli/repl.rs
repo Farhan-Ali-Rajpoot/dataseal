@@ -1,36 +1,38 @@
-use std::io::{self, Write};
-use std::env::{current_dir};
-use std::path::PathBuf;
-use crate::db::Database;
-use colored::*;
-
 use super::{
+    structs::{Database,DatabaseArguments},
     help_document::{help_document, unknown_command_message},
-    commands::{fs_commands, pass_commands, file_commands, auth_commands, system_commands},
+    commands::{fs_commands, pass_commands, file_commands, auth_commands, system_commands, nested_db, folder_commands},
     validate_args::{validate_args,print_usage},
+    colored::*,
+    std::{
+        path::{PathBuf},
+        env::{current_dir},
+        io::{self, Write},
+    },
 };
 
-pub fn start(master_password: &str) {
+pub fn start(args: &mut DatabaseArguments) {
     // Clear Screen
     fs_commands::clear();
 
-    let mut db: Database = match Database::with_dir(".cache/local",master_password) {
+    let mut db: Database = match Database::with_dir(args) {
         Some(d) => d,
         None => {
             println!("Failed to initialize database. Exiting...");
             return;
         }
     };
+
+    let mut current_db_location = db.config.db_info.name.clone();
     
-    // db.add_file("nexa-env", "../Github/Nexa/.env");
     let mut current_directory: PathBuf = current_dir().unwrap();
     let initial_dir = current_directory.clone();
     println!("DataSeal CLI ready. Type 'help' for commands.");
 
     loop {
         print!(
-            "{}{}{}",
-            "ds:".bright_green(),
+            "{}: {}{}",
+            current_db_location.bright_green(),
             current_directory.display().to_string().blue(),
             ">".bright_green()
         );
@@ -55,18 +57,137 @@ pub fn start(master_password: &str) {
             let parts: Vec<&str> = cmd.split_whitespace().collect();
 
             match parts[0] {
+                // Folder
+                "search-directories" | "searchdir" | "sdir" => {
+                    if validate_args(&["search-directories","searchdir","sdir"], &parts, 1) {
+                        folder_commands::search_folders(&db, &parts);
+                    }
+                },
+                "search-deleted-directories" | "searchdeldir" | "sddir" => {
+                    if validate_args(&["search-deleted-directories","searchdeldir","sddir"], &parts, 1) {
+                        folder_commands::search_deleted_folders(&db, &parts);
+                    }
+                },
+                "search-encrypted-directories" | "searchencdir" | "sencdir" => {
+                    if validate_args(&["search-encrypted-directories","searchencdir","sencdir"], &parts, 1) {
+                        folder_commands::search_encrypted_folders(&db, &parts);
+                    }
+                },
+                "search-decrypted-directories" | "searchdecdir" | "sdecdir" => {
+                    if validate_args(&["search-decrypted-directories","searchdecdir","sdecdir"], &parts, 1) {
+                        folder_commands::search_decrypted_folders(&db, &parts);
+                    }
+                },
+                "list-deleted-directories" | "lsdeldir" | "lddir" => {
+                    if validate_args(&["list-deleted_directories","lsdeldir","lddir"], &parts, 0) {
+                        folder_commands::list_deleted_folders(&db);
+                    }
+                },
+                "list-directories" | "lsdir" | "ldir" => {
+                    if validate_args(&["list-directories","lsdir","ldir"], &parts, 0) {
+                        folder_commands::list_folders(&db);
+                    }
+                },
+                "list-encrypted-directories" | "lsencdir" | "lencdir" => {
+                    if validate_args(&["list-encrypted-directories","lsencdir","lencdir"], &parts, 0) {
+                        folder_commands::list_encrypted_folders(&db);
+                    }
+                },
+                "list-decrypted-directories" | "lsdecdir" | "ldecdir" => {
+                    if validate_args(&["list-decrypted-directories","lsdecdir","ldecdir"], &parts, 0) {
+                        folder_commands::list_decrypted_folders(&db);
+                    }
+                },
+                "delete-all-directories" | "dadir" => {
+                    if validate_args(&["delete-all-directory" , "dadir"], &parts, 0) {
+                        let force_flag = parts.iter().any(|&p| p == "-f" || p == "--force");
+                        if force_flag {
+                            db.delete_all_folders_with_progress(true);
+                        }else {
+                            db.delete_all_folders_with_progress(false);
+                        }
+                    }
+                },
+                "delete-directory" | "ddir" => {
+                    if validate_args(&["delete-directory" , "ddir"], &parts, 1) {
+                        let force_flag = parts.iter().any(|&p| p == "-f" || p == "--force");
+                        if !force_flag {
+                            folder_commands::delete_folder(&mut db, &parts);
+                        }else {
+                            folder_commands::delete_folder_force(&mut db, &parts);
+                        }
+                    }
+                },
+                "create-directory" | "cdir" => {
+                    if parts.len() == 1 {
+                        println!("\n{}", "Invalid usage!".red().bold());
+                        println!("{}", "Here’s how to use this command:".bright_black());
+                        println!("{}", "──────────────────────────────".bright_black());
+                        print_usage(&[
+                            "create-directory <directory-name>",
+                            "cdir <directory-name>"
+                        ]);
+                    }else {
+                        folder_commands::create_folder(&mut db, &parts);
+                    }
+                },
+                // Nested DB
+                "logout-nested-database" | "logoutnesteddb" | "logondb" => {
+                    if validate_args(&["logout-nested-database","logoutnesteddb","logondb"], &parts, 0) {
+                        if !db.config.is_nested {
+                            println!("Already in root database. (root)");
+                            continue;
+                        }
+                        nested_db::logout_nested_database(&mut db, &args, &initial_dir, &mut current_db_location);
+                    }
+                },
+                "login-nested-database" | "loginnesteddb" | "logndb" => {
+                    if validate_args(&["login-nested-database","loginnesteddb","logndb"], &parts, 1) {
+                        if db.config.is_nested {
+                            println!("Already in nested database. (nested)")
+                        }
+                        nested_db::login_nested_database(&mut db, &parts, &initial_dir, &mut current_db_location);
+                    }
+                },
+                "delete-nested-database" | "delnesteddb" | "dndb" => {
+                    if validate_args(&["delete-nested-database","delnesteddb","dndb"], &parts, 2) {
+                        nested_db::delete_nested_database(&mut db, &parts);
+                    }
+                },
+                "list-nested-databases" | "listnesteddbs" | "lndb" => {
+                    if validate_args(&["list-nested-databases","listnesteddbs","lndb"], &parts, 0) {
+                        nested_db::list_nested_databases(&db, &parts);
+                    }
+                },
+                "create-nested-database" | "createnesteddb" | "cndb" => {
+                    if validate_args(&["create-nested-database","createnesteddb","cndb"], &parts, 0) {
+                        let force_flag = parts.iter().any(|&p| p == "-f" || p == "--force");
+
+                        if db.config.is_nested && !force_flag {
+                            println!("❌ Cannot create nested database inside nested database");
+                            println!("💡 Use {} to force creation", "'cndb -f'".yellow());
+                            continue;
+                        }
+
+                        if db.config.is_nested && force_flag {
+                            println!("{}", "⚠️  Creating nested database inside nested database (forced)".yellow());
+                        }
+
+                        nested_db::create_nested_database(&mut db, &parts);
+                    }
+                },
                 //System 
                 "database-info" | "di" => {
                     if validate_args(&["storage-info","di"], &parts, 0) {
                         system_commands::show_database_info(&mut db);
                     }
-                }
+                },
                 // Auth 
                 "change-root-password" | "chgrootpass" | "crp" => {
                     if validate_args(&["change-root-password","chgrootpass","crp"], &parts, 2) {
                         if auth_commands::change_root_password(&mut db, &parts) {
                             fs_commands::clear();
-                            println!("✅ Master password changed.");
+                            // println!("✅ Master password changed.");
                         }
                     }
                 },
@@ -342,5 +463,35 @@ pub fn start(master_password: &str) {
                 _ => println!("{}", unknown_command_message(cmd)),
             }       
         }
+    }
+}
+
+
+
+pub fn push_path(path: &mut String, name: &str) {
+    if let Some(pos) = path.find('/') {
+        // Already has two segments -> replace second
+        if path[pos + 1..].contains('/') {
+            // truncate after first segment
+            if let Some(first_slash) = path.find('/') {
+                path.truncate(first_slash);
+            }
+        }
+        // truncate everything after first slash
+        if let Some(first_slash) = path.find('/') {
+            path.truncate(first_slash);
+        }
+        path.push('/');
+        path.push_str(name);
+    } else {
+        // Only root exists -> just append
+        path.push('/');
+        path.push_str(name);
+    }
+}
+pub fn pop_path(path: &mut String) {
+    if let Some(pos) = path.find('/') {
+        // keep only root part
+        path.truncate(pos);
     }
 }

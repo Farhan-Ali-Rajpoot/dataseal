@@ -1,4 +1,6 @@
-use colored::*;
+use super::{
+    colored::*,
+};
 
 /// Validate arguments for commands with aliases.
 /// `cmd_names` = array of command names/aliases.
@@ -27,6 +29,75 @@ pub fn validate_args(cmd_names: &[&str], parts: &[&str], expected: usize) -> boo
         println!("{}", "──────────────────────────────".bright_black());
 
         match input_cmd {
+            "db_mode" => print_usage(&[
+                "db_mode",
+            ]),
+            "sys_mode" => print_usage(&[
+                "sys_mode",
+            ]),
+            "search-directories" | "searchdir" | "sdir" => print_usage(&[
+                "search-directories <query>",
+                "searchdir <query>",
+                "sdir <query>",
+            ]),
+            "search-deleted-directories" | "searchdeldir" | "sddir" => print_usage(&[
+                "search-deleted-directories <query>",
+                "searchdeldir <query>",
+                "sddir <query>",
+            ]),
+            "search-encrypted-directories" | "searchencdir" | "sencdir" => print_usage(&[
+                "search-encrypted-directories <query>",
+                "searchencdir <query>",
+                "sencdir <query>",
+            ]),
+            "search-decrypted-directories" | "searchdecdir" | "sdecdir" => print_usage(&[
+                "search-decrypted-directories <query>",
+                "searchdecdir <query>",
+                "sdecdir <query>",
+            ]),
+            "list-directories" | "lsdir" | "ldir" => print_usage(&[
+                "list-directories",
+                "lsdir",
+                "ldir"
+            ]),
+            "list-deleted-directories" | "lsdeldir" | "lddir" => print_usage(&[
+                "list-deleted-directories",
+                "lsdeldir",
+                "lddir"
+            ]),
+            "list-encrypted-directories" | "lsencdir" | "lencdir" => print_usage(&[
+                "list-encrypted-directories",
+                "lsencdir",
+                "lencdir"
+            ]),
+            "list-decrypted-directories" | "lsdecdir" | "ldecdir" => print_usage(&[
+                "list-decrypted-directories",
+                "lsdecdir",
+                "ldecdir",
+            ]),
+            "delete-all_directory" | "dadir" => print_usage(&[
+                "delete-all_directory",
+                "dadir"
+            ]),
+            "delete-directory" | "ddir" => print_usage(&[
+                "create-directory <name>",
+                "cdir <name>"
+            ]),
+            "delete-nested-database" | "delnesteddb" | "dndb" => print_usage(&[
+                "delete-nested-database <name> <password>",
+                "delnesteddb <name> <password>",
+                "dndb <name> <password>"
+            ]),
+            "list-nested-databases" | "listnesteddbs" | "lndb" => print_usage(&[
+                "list-nested-databases ",
+                "listnesteddbs ",
+                "lndb "
+            ]),
+            "create-nested-database" | "createnesteddb" | "cndb" => print_usage(&[
+                "create-nested-database ",
+                "createnesteddb ",
+                "cndb",
+            ]),
             "database-info" | "di" => print_usage(&[
                 "database-info",
                 "di"

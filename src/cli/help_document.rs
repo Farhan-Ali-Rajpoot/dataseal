@@ -26,6 +26,16 @@ PATH COMMANDS:
     lsa                        List all files and folders in current directory
     cd <dir>                  Change current directory
 
+NESTED DATABASE COMMANDS:
+    list-nested-databases     listnesteddbs, lndb
+    create-nested-database    createnesteddb, cndb
+    delete-nested-database    delnesteddb, dndb
+    logout-nested-database    logoutnesteddb, logondb
+    login-nested-database     loginnesteddb, logndb
+
+DATABASE COMMANDS:
+    database-info             di
+
 FILE COMMANDS:
     cut-add-file <name> <filename>      cutaddfile,caf
     add-file <name> <filename>          addfile, af

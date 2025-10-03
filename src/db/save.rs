@@ -1,75 +1,121 @@
-use super::{Database, DatabaseMeta};
-use std::{fs,fs::{OpenOptions, read_to_string}};
-use std::io::BufWriter;
-use std::io::Write;
-use std::path::Path;
+use super::{
+    structs::{MetaType, NestedDatabaseMetaType},
+    std::{
+        fs,
+        fs::{OpenOptions, read_to_string, create_dir_all},
+        io::{BufWriter, Write},
+        path::Path,
+    },
+};
 
 
-impl Database {
-    pub fn save_meta(&self) {
-        if let Some(parent) = Path::new(&self.meta_file).parent() {
-            fs::create_dir_all(parent).unwrap(); // create dirs if missing
+
+impl MetaType {
+    pub fn save(&self) -> bool {
+        if let Some(parent) = Path::new(&self.file_path).parent() {
+            if let Err(e) = create_dir_all(parent) {
+                eprintln!("Failed to create parent directory: {}", e);
+                return false;
+            }
         }
 
-        let file = OpenOptions::new()
+        let file = match OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
-            .open(&self.meta_file)
-            .unwrap();
-        let mut writer = BufWriter::new(file);
-        writeln!(writer, "{}", serde_json::to_string_pretty(&self.meta).unwrap()).unwrap();
-    }
-
-    pub fn save_trash_meta(&self) {
-        if let Some(parent) = Path::new(&self.trash_meta_file).parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-
-        let file = OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(&self.trash_meta_file)
-            .unwrap();
-        let mut writer = BufWriter::new(file);
-        writeln!(writer, "{}", serde_json::to_string_pretty(&self.trash_meta).unwrap()).unwrap();
-    }
-
-    pub fn save_encrypted_meta(&self) {
-        if let Some(parent) = Path::new(&self.encrypted_meta_file).parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-
-        let file = OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(&self.encrypted_meta_file)
-            .unwrap();
-        let mut writer = BufWriter::new(file);
-        writeln!(writer, "{}", serde_json::to_string_pretty(&self.encrypted_meta).unwrap()).unwrap();
-    }
-
-    pub fn load_meta(&mut self) {
-        // Helper closure to read a JSON file or return default
-        let load_json = |path: &str| -> DatabaseMeta {
-            if Path::new(path).exists() {
-                let data = read_to_string(path).unwrap_or_default();
-                println!("{}: {}",path,data);
-                if data.trim().is_empty() {
-                    DatabaseMeta::default()
-                } else {
-                    serde_json::from_str(&data).unwrap_or_default()
-                }
-            } else {
-                DatabaseMeta::default()
+            .open(&self.file_path)
+        {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Failed to open file: {}", e);
+                return false;
             }
         };
 
-        self.meta = load_json(&self.meta_file);
-        self.trash_meta = load_json(&self.trash_meta_file);
-        self.encrypted_meta = load_json(&self.encrypted_meta_file);
+        let mut writer = BufWriter::new(file);
+        match serde_json::to_string_pretty(&self.data) {
+            Ok(serialized) => {
+                if let Err(e) = writeln!(writer, "{}", serialized) {
+                    eprintln!("Failed to write data: {}", e);
+                    return false;
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to serialize data: {}", e);
+                return false;
+            }
+        }
+
+        true
     }
 
+    // Keep load unchanged
+    pub fn load(&mut self) {
+        if Path::new(&self.file_path).exists() {
+            let data = read_to_string(&self.file_path).unwrap_or_default();
+            if !data.trim().is_empty() {
+                self.data = serde_json::from_str(&data).unwrap_or_default();
+            }
+        }
+    }
 }
+
+impl NestedDatabaseMetaType {
+    pub fn save(&self) -> bool {
+        if let Some(parent) = Path::new(&self.file_path).parent() {
+            if let Err(e) = create_dir_all(parent) {
+                eprintln!("Failed to create directory: {}", e);
+                return false;
+            }
+        }
+
+        let file = match OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&self.file_path)
+        {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Failed to open file: {}", e);
+                return false;
+            }
+        };
+
+        let serialized = match serde_json::to_string_pretty(&self.data) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Failed to serialize data: {}", e);
+                return false;
+            }
+        };
+
+        let mut writer = BufWriter::new(file);
+        if let Err(e) = writeln!(writer, "{}", serialized) {
+            eprintln!("Failed to write data: {}", e);
+            return false;
+        }
+
+        true
+    }
+
+    // Keep load unchanged
+    pub fn load(&mut self) -> Result<(), String> {
+        if !Path::new(&self.file_path).exists() {
+            return Ok(());
+        }
+
+        let data = fs::read_to_string(&self.file_path)
+            .map_err(|e| format!("Failed to read file: {}", e))?;
+
+        if data.trim().is_empty() {
+            return Ok(());
+        }
+
+        self.data = serde_json::from_str(&data)
+            .map_err(|e| format!("Failed to deserialize data: {}", e))?;
+
+        Ok(())
+    }
+}
+

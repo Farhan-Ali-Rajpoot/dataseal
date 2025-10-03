@@ -1,6 +1,8 @@
-use crate::db::{Database,PasswordEntry};
-use colored::*;
-use terminal_size::{Width, terminal_size};
+use super::{
+    structs::{Database,PasswordEntry},
+    colored::*,
+    terminal_size::{Width, terminal_size}
+};
 
 
 
